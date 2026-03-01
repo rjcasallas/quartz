@@ -1,0 +1,36 @@
+# Files
+*.o
+*.a
+*.bak
+*.bin
+*.exe
+*.hex
+*.gbl
+*.der
+*.log
+*.map
+*.pem
+*.s37
+*.sum
+*.tar*
+*.zip
+/*.json
+*.sqlite
+*.db
+*.old
+
+# Folders
+build
+temp
+doc*
+out*
+lib*
+logs
+repo
+@types
+node_modules
+
+# Other
+__*
+*_.*
+.DS_Store
