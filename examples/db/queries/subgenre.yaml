@@ -1,0 +1,21 @@
+subgenre:
+  select_ref: |
+    SELECT s.`parent_id`, s.`child_id`
+      FROM `subgenre` s
+
+  select_ref_by_pk: |
+    @subgenre/select_ref
+     WHERE s.`parent_id` = ? AND s.`child_id` = ?
+
+  replace: |
+    REPLACE INTO `subgenre`(`parent_id`, `child_id`)
+    VALUES (?, ?)
+
+  delete: |
+    DELETE FROM `subgenre`
+
+  delete_id: |
+    DELETE FROM `subgenre`
+     WHERE `parent_id` = ? AND `child_id` = ?
+
+

@@ -1,0 +1,21 @@
+book_genre:
+  select_ref: |
+    SELECT bg.`book_id`, bg.`genre_id`
+      FROM `book_genre` bg
+
+  select_ref_by_pk: |
+    @book_genre/select_ref
+     WHERE bg.`book_id` = ? AND bg.`genre_id` = ?
+
+  replace: |
+    REPLACE INTO `book_genre`(`book_id`, `genre_id`)
+    VALUES (?, ?)
+
+  delete: |
+    DELETE FROM `book_genre`
+
+  delete_id: |
+    DELETE FROM `book_genre`
+     WHERE `book_id` = ? AND `genre_id` = ?
+
+

@@ -1,0 +1,60 @@
+/* SQLEditor (SQLite)*/
+
+DROP TABLE IF EXISTS book_author;
+DROP TABLE IF EXISTS author;
+DROP TABLE IF EXISTS book_genre;
+DROP TABLE IF EXISTS subgenre;
+DROP TABLE IF EXISTS genre;
+DROP TABLE IF EXISTS book;
+DROP TABLE IF EXISTS publisher;
+
+CREATE TABLE author
+(
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE book_author
+(
+book_id INTEGER NOT NULL REFERENCES book (id),
+author_id INTEGER NOT NULL REFERENCES author (id),
+rank INTEGER DEFAULT '1' NOT NULL,
+PRIMARY KEY (book_id,author_id)
+);
+
+CREATE TABLE genre
+(
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE book_genre
+(
+book_id INTEGER NOT NULL REFERENCES book (id),
+genre_id INTEGER NOT NULL REFERENCES genre (id),
+PRIMARY KEY (book_id,genre_id)
+);
+
+CREATE TABLE publisher
+(
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+parent_id INTEGER REFERENCES publisher (id),
+name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE book
+(
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+publisher_id INTEGER NOT NULL REFERENCES publisher (id),
+title TEXT NOT NULL UNIQUE,
+year INTEGER NOT NULL
+);
+
+CREATE TABLE subgenre
+(
+parent_id INTEGER NOT NULL REFERENCES genre (id),
+child_id INTEGER NOT NULL REFERENCES genre (id),
+PRIMARY KEY (parent_id,child_id)
+);
+
+CREATE UNIQUE INDEX book_rank_idx ON book_author (book_id,rank);

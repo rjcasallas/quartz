@@ -1,0 +1,3 @@
+black==26.5.1
+pybars3==0.9.7
+PyYAML==6.0.3

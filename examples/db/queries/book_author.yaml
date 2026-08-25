@@ -1,0 +1,46 @@
+book_author:
+  select_ref: |
+    SELECT ba.`book_id`, ba.`author_id`
+      FROM `book_author` ba
+
+  select_all: |
+    SELECT ba.*
+      FROM `book_author` ba
+
+  select_ref_by_pk: |
+    @book_author/select_ref
+     WHERE ba.`book_id` = ? AND ba.`author_id` = ?
+
+  select_all_by_pk: |
+    @book_author/select_all
+     WHERE ba.`book_id` = ? AND ba.`author_id` = ?
+
+  select_ref_by_rank: |
+    @book_author/select_ref
+      WHERE ba.`rank` = ?
+
+  select_all_by_rank: |
+    @book_author/select_all
+      WHERE ba.`rank` = ?
+
+  replace: |
+    REPLACE INTO `book_author`(`book_id`, `author_id`, `rank`)
+    VALUES (?, ?, ?)
+
+  update: |
+    UPDATE `book_author`
+       SET `rank` = ?
+     WHERE `book_id` = ?, `author_id` = ?
+
+  delete: |
+    DELETE FROM `book_author`
+
+  delete_id: |
+    DELETE FROM `book_author`
+     WHERE `book_id` = ? AND `author_id` = ?
+
+  delete_rank: |
+    DELETE FROM `book_author`
+     WHERE `rank` = ?
+
+
