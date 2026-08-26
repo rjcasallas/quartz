@@ -33,6 +33,10 @@ brew install googletest
 ### Tests
 
 ```bash
+# All
 python test/python/main.py
+# Dataset
+python test/python/data.py
+
 ```
 

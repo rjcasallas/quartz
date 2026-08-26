@@ -1,0 +1,16 @@
+author:
+  select_ref_by_book: |
+    @author/select_ref
+      INNER JOIN `book_author` ba
+         ON ba.`author_id` = a.`id`
+      INNER JOIN `book` b
+         ON b.`id` = ba.`book_id`
+      WHERE b.`id` = ?
+
+  select_all_by_book: |
+    @author/select_all
+      INNER JOIN `book_author` ba
+         ON ba.`author_id` = a.`id`
+      INNER JOIN `book` b
+         ON b.`id` = ba.`book_id`
+      WHERE b.`id` = ?

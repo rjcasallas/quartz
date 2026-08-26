@@ -1,0 +1,69 @@
+from quartz.gen.data import Reference
+from quartz.error import Error
+from quartz.util import Parse
+from quartz.log import Log
+
+#
+# Entities
+#
+{{#each entities}}
+
+class {{-pascal}}Ref(Reference):
+
+    @staticmethod
+    def valid(x, nullable = False):
+        if nullable and x is None:
+            return None
+        if isinstance(x, int) or isinstance(x, {{-pascal}}Ref):
+            return int(x)
+        Error.invalid("{{-name}} reference", x)
+
+{{/each}}
+#
+# Aggregates
+#
+{{#each aggregates}}
+
+class {{-pascal}}Ref:
+
+    def __init__(self{{#each keys}}, {{-param}}{{/each}}):
+{{#each keys}}
+        self.{{-name}} = {{-param}}
+{{/each}}
+
+    def __repr__(self):
+{{#each keys}}
+        {{-param}} = Parse.string(self.{{-field}})
+{{/each}}
+        return "{{-name}}({{#-list keys}}{{-name}}:{}{{/-list}})".format({{#-list keys}}{{-param}}{{/-list}})
+{{#each keys}}
+
+    @property
+    def {{-name}}(self):
+        return self.{{-field}}
+    @{{-name}}.setter
+    def {{-name}}(self, x):
+{{#if into}}
+        self.{{-field}} = {{-ref into}}.valid(x, True)
+{{else}}
+        self.{{-field}} = x
+{{/if}}
+{{/each}}
+
+    def copy(self, x):
+        if isinstance(x, {{-pascal}}Ref):
+{{#each keys}}
+            self.{{-name}} = x.{{-name}}
+{{/each}}
+        return self
+
+    @staticmethod
+    def valid(x, nullable = False):
+        if nullable and (x is None):
+            return None
+        if isinstance(x, {{-pascal}}Ref):
+            return x
+        Error.invalid("{{-name}} reference", x)
+
+
+{{/each}}

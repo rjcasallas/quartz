@@ -259,6 +259,7 @@ class Table:
         self._type = type_ or Table.Type.Unknown
         self._columns = columns or []
         self._auto = None  # columns
+        self._parent = None
         self._lookup = None  # column
         self._singular = False
         self._keys = []
@@ -275,8 +276,11 @@ class Table:
         sing = "  S" if self._singular else ""
         return f'"{self._name}"({len(self._columns)}) <{self._type.name.lower()}>{sing}'
 
-    # def __getitem__(self, x) -> Column:
-    #     return self.get(x)
+    def __lt__(self, other):
+        return self.name < other.name
+
+    def __eq__(self, other):
+        return self.name == other.name
 
     @property
     def name(self) -> str:
@@ -293,6 +297,14 @@ class Table:
     @property
     def auto(self) -> Column:
         return self._auto
+
+    @property
+    def parent(self) -> Column:
+        return self._parent
+
+    @property
+    def is_entity(self) -> Column:
+        return self._auto or (self._parent is not None)
 
     @property
     def lookup(self) -> Column:
@@ -373,6 +385,9 @@ class Table:
         # Configuration
         if config:
             self._singular = ("singular" in config) and config["singular"]
+        if Table.Type.Subtype == self.type:
+            self._parent = self.keys[0].into.table
+
 
     def link(self):
         # Create links
@@ -396,6 +411,7 @@ class Table:
         # Subtype table: One PK column that is a foreign key
         elif (1 == pk_count) and self.keys[0].into:
             self._type = Table.Type.Subtype
+
         # Lookup table: One PK column and one text column
         elif self.lookup and (1 == pk_count) and (2 == len(self.columns)):
             self._type = Table.Type.Lookup
@@ -476,6 +492,9 @@ class Schema:
         Error.missing(f'table "{x}"')
 
     def compile(self):
+        entities = []
+        junctions = []
+        aggregates = []
         # Classify tables and columns
         for t in self._tables.values():
             conf = (
@@ -483,11 +502,11 @@ class Schema:
             )
             t.compile(conf)
             if t.entity:
-                self.entities.append(t)
+                entities.append(t)
             else:
-                self.junctions.append(t)
+                junctions.append(t)
             if t.aggregate:
-                self.aggregates.append(t)
+                aggregates.append(t)
             if t.lookup:
                 self._filters[t.lookup.name] = t.lookup
         # Link tables
@@ -497,6 +516,10 @@ class Schema:
                 l._special = l.key not in self._tables
                 if l.special:
                     self._specials[l.name] = l
+        # Sort
+        self._entities = sorted(entities, key=lambda t: t.name)
+        self._junctions = sorted(junctions, key=lambda t: t.name)
+        self._aggregates = sorted(aggregates, key=lambda t: t.name)
         return self
 
     def print(self, level: int = 0):

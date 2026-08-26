@@ -2,6 +2,7 @@
 from quartz.log import Log
 from quartz.app import BasicCommand, Types
 from db.queries import QueriesGenerator
+from db.dataset import DatabaseGenerator, PythonDatasetGenerator, DatasetFlags
 
 
 class DatabaseCommand(BasicCommand):
@@ -31,3 +32,47 @@ class QueriesCommand(DatabaseCommand):
         gen.print()
         gen.generate(out)
 
+
+class PythonDatasetCommand(DatabaseCommand):
+
+    def __init__(self):
+        super().__init__("Python Dataset")
+
+    def setup(self) -> None:
+        super().setup()
+        self.args.dashed.add("module", "m", Types.Path, "ds")
+        self.args.dashed.add("refs", "r", Types.Flag)
+        self.args.dashed.add("model", "m", Types.Flag)
+        self.args.dashed.add("sqlite", "q", Types.Flag)
+        self.args.dashed.add("data", "d", Types.Flag)
+
+    def execute(self):
+        super().execute()
+        schema = self.args.string("schema")
+        mod = self.args.string("module")
+        out = self.args.string("out") or "examples/python/ds"
+        flags = DatasetFlags(0)
+        if self.args.boolean("refs"):   flags |= DatasetFlags.Refs
+        if self.args.boolean("model"):  flags |= DatasetFlags.Model
+        if self.args.boolean("sqlite"): flags |= DatasetFlags.Sqlite
+        if self.args.boolean("data"):   flags |= DatasetFlags.Dataset
+
+        gen = PythonDatasetGenerator(schema)
+        gen.print()
+        gen.generate(out, mod, flags)
+
+
+class DatasetCommand(DatabaseCommand):
+
+    def __init__(self):
+        super().__init__("Dataset")
+
+    def setup(self) -> None:
+        super().setup()
+        self.commands.add(["python", "p"], PythonDatasetCommand())
+
+    def execute(self):
+        Log.list(f"Schema", 0, '‣')
+        schema = self.args.string("schema")
+        gen = DatabaseGenerator(schema)
+        gen.print()

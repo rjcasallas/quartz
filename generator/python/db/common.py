@@ -1,5 +1,5 @@
 from quartz.file import Paths
-from quartz.gen.base import TargetGenerator, Target, Helpers
+from quartz.gen.base import TargetGenerator, Helpers
 from quartz.db.meta import Table, Column, Link
 from quartz.db.sqlite import Database
 import os

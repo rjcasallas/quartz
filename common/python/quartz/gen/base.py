@@ -13,7 +13,7 @@ from quartz.file import TextFile
 
 class Helpers:
 
-    def _name(self, x=None):
+    def _name(self, x=None, shorten=False):
         if isinstance(x, str):
             return x
         if isinstance(x, dict) and ("name" in x):
@@ -21,7 +21,11 @@ class Helpers:
         if isinstance(x, Table):
             return x.name
         if isinstance(x, Column):
-            return x.name[:-3] if x.name.endswith("_id") else x.name
+            if shorten and x.name.endswith("_id"):
+                return x.name[:-3]
+            else:
+                return x.name
+            #return x.name[:-3] if x.name.endswith("_id") else x.name
         if isinstance(x, Link):
             return x.name
         Log.warning(f"Invalid name: {x}; {type(x)}")
@@ -59,8 +63,17 @@ class Helpers:
             return int(x) + 1
         return int(x) + (int(y) if y else 0) + (int(z) if z else 0)
 
+    def __or(self, this, a=False, b=False):
+        return a or b
+
+    def __and(self, this, a=False, b=False):
+        return a and b
+
     def __name(self, this, text=None):
         return self._name(text or this.context)
+
+    def __name_(self, this, text=None):
+        return self._name(text or this.context, shorten=True)
 
     def __field(self, this, text=None):
         return self._field(text or this.context)
@@ -93,7 +106,7 @@ class Helpers:
             or (isinstance(items3, dict) and list(items3.values()))
             or []
         )
-        all = i1 + i2 + i3
+        all = sorted(i1 + i2 + i3)
         result = []
         for i in all:
             result.extend(options["fn"](i))
@@ -121,7 +134,10 @@ class Helpers:
 
     def compile(self):
         return {
+            "-or": self.__or,
+            "-and": self.__and,
             "-name": self.__name,
+            "-name-": self.__name_,
             "-field": self.__field,
             "-param": self.__param,
             "-plural": self.__plural,

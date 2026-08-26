@@ -1,0 +1,47 @@
+from {{_module}}.model._reference import *
+{{#-each entities aggregates}}
+from {{_module}}.model.{{-name}} import *
+{{/-each}}
+from quartz.error import Error
+from quartz.log import Log
+
+#
+# Dataset
+#
+
+class Dataset:
+
+    class Manager:
+        def __init__(self, ds):
+            self._ds = ds
+
+        @property
+        def ds(self):
+            return self._ds
+
+{{#-each entities aggregates}}
+    class {{-ppascal}}(Manager, {{-pascal}}Manager):
+        pass
+
+{{/-each}}
+    def __init__(self):
+{{#-each entities aggregates}}
+        self._{{-plural}} = None
+{{/-each}}
+
+{{#-each entities aggregates}}
+    @property
+    def {{-plural}}(self) -> 'Dataset.Manager':
+        if self._{{-plural}} is None: Error.fail(f"Not initialized: {{-plural}}.")
+        return self._{{-plural}}
+
+{{/-each}}
+    def print(self, level = 0):
+{{#-each entities}}
+        # {{-plural}}
+        {{-plural}} = self.{{-plural}}.all()
+        Log.list("{{-plural}}({})".format(len({{-plural}})), level + 1)
+        for {{alias}} in {{-plural}}:
+            Log.list(str({{alias}}), level + 2)
+
+{{/-each}}

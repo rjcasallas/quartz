@@ -20,12 +20,12 @@
 
 {{/if}}
 {{#each indexed}}
-  select_ref_by_{{-name}}: |
+  select_ref_by_{{-name-}}: |
     @{{-name _table}}/select_ref
       WHERE {{table.alias}}.`{{name}}` = ?
 
 {{#if table.nonkeys}}
-  select_all_by_{{-name}}: |
+  select_all_by_{{-name-}}: |
     @{{-name _table}}/select_all
       WHERE {{table.alias}}.`{{name}}` = ?
 
@@ -61,7 +61,7 @@
      WHERE {{#each _keys}}{{#unless @first}} AND {{/unless}}`{{name}}` = ?{{/each}}
 
 {{#each indexed}}
-  delete_{{-name}}: |
+  delete_{{-name-}}: |
     DELETE FROM `{{table}}`
      WHERE `{{name}}` = ?
 

@@ -1,0 +1,146 @@
+from {{_module}}.model._data import *
+from quartz.gen.data import Reference
+from quartz.gen.sqlite import Manager
+from quartz.error import Error
+
+
+class {{-pascal}}SqliteManager(Dataset.{{-ppascal}}, Manager):
+
+    def __init__(self, ds, db):
+        Dataset.{{-ppascal}}.__init__(self, ds)
+        Manager.__init__(self, '{{name}}', db)
+
+
+    def add(self, x:{{-pascal}}):
+        {{alias}} = {{-pascal}}.valid(x)
+{{#if auto}}
+        if x.id is None:
+            x.id = self.db.exec('@{{name}}/insert', [ {{#-list nonauto}}x.{{-name}}{{/-list}} ])
+        else:
+            self.db.exec('@{{name}}/insert_id', [ {{#-list columns}}x.{{-name}}{{/-list}} ])
+{{else}}
+        self.db.exec('@{{name}}/replace', [ {{#-list columns}}x.{{-name}}{{/-list}} ])
+{{/if}}
+        return {{alias}}
+
+
+    def update(self, x):
+        {{alias}} = {{-pascal}}.valid(x)
+{{#if nonkeys}}
+        self.db.exec('@{{name}}/update', [ {{#-list nonkeys}}x.{{-name}}{{/-list}}, {{#-list _keys}}x.{{-name}}{{/-list}} ])
+{{else}}
+        self.db.exec('@{{name}}/replace', [ {{#-list columns}}x.{{-name}}{{/-list}} ])
+{{/if}}
+        return {{alias}}
+
+
+    def remove(self, x):
+{{#if is_entity}}
+        if isinstance(x, int) or isinstance(x, {{-pascal}}Ref):
+            return self.db.exec('@{{name}}/delete_id', [ int(x) ])
+{{else}}
+        if isinstance(x, {{-pascal}}Ref):
+            return self.db.exec('@{{name}}/delete_id', [ {{#-list _keys}}x.{{-name}}{{/-list}} ])
+{{/if}}
+{{#if _lookup}}
+        if isinstance(x, str):
+            return self.db.exec('@{{name}}/delete_{{_lookup}}', [ x ])
+{{/if}}
+        Error.missing(f"remove '{{name}}': {type(x)}")
+
+
+{{#if (-and is_entity links)}}
+    def link(self, x, y):
+        if not (isinstance(x, int) or isinstance(x, {{-pascal}}Ref)):
+            Error.invalid("{{-name}} link base", x)
+        if not isinstance(x, Reference):
+            Error.invalid("{{-name}} link target", x)
+        return self._link(int(x), y)
+
+    def unlink(self, x, y):
+        if not (isinstance(x, int) or isinstance(x, {{-pascal}}Ref)):
+            Error.invalid("{{-name}} link base", x)
+        if not isinstance(x, Reference):
+            Error.invalid("{{-name}} link target", x)
+        return self._unlink(int(x), y)
+
+
+{{/if}}
+    def _reference(self, x):
+{{#if is_entity}}
+        return {{-pascal}}Ref(x[0])
+{{else}}
+        return {{-pascal}}Ref({{#each keys}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}})
+{{/if}}
+
+
+    def _instance(self, x):
+        return {{-pascal}}({{#each columns}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}})
+
+
+{{#if (-and is_entity links)}}
+    def _link(self, base_id, x):
+{{#each links}}
+        # {{{this}}}
+        if isinstance(x, {{-pascal target.table}}Ref):
+            return self.db.exec('@{{-name source.table}}/insert_{{-name target.table}}', [ base_id, int(x) ])
+{{/each}}
+        Error.invalid("{{-name}} link target", x)
+
+
+    def _unlink(self, base_id, x):
+{{#each links}}
+        # {{{this}}}
+        if isinstance(x, {{-pascal target.table}}Ref):
+            return self.db.exec('@{{-name source.table}}/delete_{{-name target.table}}', [ base_id, int(x) ])
+{{/each}}
+        Error.invalid("{{-name}} link target", x)
+
+
+{{/if}}
+    def _ref(self, x = None) -> {{#if is_entity}}int{{else}}{{-pascal}}{{/if}}:
+        if x is None:
+            sql = self.db.sql('@{{name}}/select_ref', 'LIMIT 1')
+            return self.db.one(sql)
+{{#if is_entity}}
+        if isinstance(x, int) or isinstance(x, {{-pascal}}Ref):
+            return self.db.one('@{{name}}/select_ref_by_pk', [ int(x) ])
+{{else}}
+        if isinstance(x, {{-pascal}}):
+            return self.db.one('@{{name}}/select_ref_by_pk', {{#-list keys}}x.{{-name}}{{/-list}})
+{{/if}}
+{{#if _lookup}}
+        if isinstance(x, str):
+            return self.db.one('@{{name}}/select_ref_by_{{-name _lookup}}', [ x ])
+{{/if}}
+        Error.missing(f"select '{{name}}' ref: {type(x)}")
+
+
+    def _refs(self, x = None) -> list[{{#if is_entity}}int{{else}}{{-pascal}}{{/if}}]:
+        if x is None:
+            return self.db.all('@{{name}}/select_ref')
+        Error.missing(f"select '{{name}}' refs: {type(x)}")
+
+
+    def _one(self, x = None) -> {{-pascal}}:
+        if x is None:
+            sql = self.db.sql('@{{name}}/select_all', 'LIMIT 1')
+            return self.db.one(sql)
+{{#if is_entity}}
+        if isinstance(x, int) or isinstance(x, {{-pascal}}Ref):
+            return self.db.one('@{{name}}/select_all_by_pk', [ int(x) ])
+{{else}}
+        if isinstance(x, {{-pascal}}):
+            return self.db.one('@{{name}}/select_all_by_pk', {{#-list keys}}x.{{-name}}{{/-list}})
+{{/if}}
+{{#if _lookup}}
+        if isinstance(x, str):
+            return self.db.one('@{{name}}/select_all_by_{{-name _lookup}}', [ x ])
+{{/if}}
+        Error.missing(f"select '{{name}}' get: {type(x)}")
+
+
+    def _all(self, x = None) -> list[{{-pascal}}]:
+        if x is None:
+            return self.db.all('@{{name}}/select_all')
+        Error.missing(f"select '{{name}}' all: {type(x)}")
