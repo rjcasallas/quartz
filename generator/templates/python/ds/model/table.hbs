@@ -1,4 +1,4 @@
-from {{_module}}.model._reference import *
+from {{_module}}.model._base import *
 {{#if parent}}
 from {{_module}}.model.{{-name parent}} import *
 {{/if}}
@@ -7,7 +7,6 @@ from {{_module}}.model.{{-name parent}} import *
 from {{../_module}}.model.{{-name into.table}} import *
 {{/if}}
 {{/each}}
-import quartz.gen.data as _data
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -18,12 +17,12 @@ from quartz.util import Parse
 
 class {{-pascal}}({{-pascal}}Ref):
 
-    def __init__(self{{#each nonkeys}}, {{-param}} = None{{/each}}{{#each keys}}, {{-param}} = None{{/each}}):
+    def __init__(self{{#each nonkeys}}, {{-param}}=None{{/each}}{{#each keys}}, {{-param}}=None{{/each}}):
         super().__init__(id)
 {{#each nonkeys}}
         self.{{-name}} = {{-param}}
 {{/each}}
-{{#if _lookup}}
+{{#if lookup}}
 
     def __str__(self):
         return self.{{-field _lookup}}
@@ -60,17 +59,18 @@ class {{-pascal}}({{-pascal}}Ref):
 
 class {{-pascal}}({{-pascal}}Ref):
 
-    def __init__(self{{#each columns}}, {{-param}}{{/each}}):
+    def __init__(self{{#each columns}}, {{-param}}=None{{/each}}):
         super().__init__({{#-list keys}}{{-param}}{{/-list}})
 {{#each nonkeys}}
         self.{{-name}} = {{-param}}
 {{/each}}
 
     def __repr__(self):
-{{#each columns}}
+        ref = super().__repr__()
+{{#each nonkeys}}
         {{-param}} = Parse.string(self.{{-field}})
 {{/each}}
-        return "{{-name}}({{#-list columns}}{{-name}}:{}{{/-list}})".format({{#-list columns}}{{-param}}{{/-list}})
+        return "{}({{#-list nonkeys}}{{-name}}:{}{{/-list}})".format(ref{{#each nonkeys}},{{-param}}{{/each}})
 {{#each nonkeys}}
 
     @property
@@ -85,8 +85,6 @@ class {{-pascal}}({{-pascal}}Ref):
 {{/if}}
 {{/each}}
 
-{{/if}}
-{{#if nonkeys}}
     def copy(self, x):
         if isinstance(x, {{-pascal}}):
             super().copy(x)
@@ -103,20 +101,3 @@ class {{-pascal}}({{-pascal}}Ref):
         if isinstance(x, {{-pascal}}):
             return x
         Error.invalid("{{-name}}", x)
-
-#
-# Manager
-#
-
-class {{-pascal}}Manager({{#if entity}}_data.EntityManager{{else}}_data.BasicManager{{/if}}):
-{{#if _lookup}}
-
-    def fetch(self, x, id = None):
-        x_ = str(x)
-        {{alias}} = self.one(x_)
-        if {{alias}} is None:
-            {{alias}} = self.add({{-pascal}}(x_, id))
-        return {{alias}}
-{{else}}
-    pass
-{{/if}}

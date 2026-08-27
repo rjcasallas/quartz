@@ -3,7 +3,7 @@
     SELECT {{#-list _keys}}{{table.alias}}.`{{name}}`{{/-list}}
       FROM `{{name}}` {{alias}}
 
-{{#if _nonkeys}}
+{{#if nonkeys}}
   select_all: |
     SELECT {{alias}}.*
       FROM `{{name}}` {{alias}}
@@ -13,7 +13,7 @@
     @{{name}}/select_ref
      WHERE {{#each _keys}}{{table.alias}}.`{{name}}` = ?{{#unless @last}} AND {{/unless}}{{/each}}
 
-{{#if _nonkeys}}
+{{#if nonkeys}}
   select_all_by_pk: |
     @{{name}}/select_all
      WHERE {{#each _keys}}{{table.alias}}.`{{name}}` = ?{{#unless @last}} AND {{/unless}}{{/each}}

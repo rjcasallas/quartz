@@ -1,0 +1,86 @@
+import {{_module}}.model._dataset as _model
+import quartz.gen.data as _base
+from quartz.error import Error
+from quartz.log import Log
+from abc import ABC, abstractmethod
+
+#
+# Entities
+#
+
+class Entity(ABC):
+
+    def __init__(self, x=None):
+        self.data = x
+
+    @property
+    def data(self):
+        if self._ is None: Error.fail("Detached")
+        return self._
+    @data.setter
+    def data(self, x):
+        if isinstance(x, Engine) or (x is None):
+            self._ = x
+        else: Error.invalid("engine")
+
+{{#-each entities}}
+
+class {{-pascal}}(_model.{{-pascal}}, Entity):
+
+    @staticmethod
+    def valid(x, nullable=False, dettached=True):
+        if nullable and (x is None):
+            return None
+        if isinstance(x, {{-pascal}}):
+            if dettached or x.id:
+                return x
+        Error.invalid("{{-name}}", x)
+
+{{/-each}}
+#
+# Managers
+#
+
+class Manager(_base.EntityManager):
+
+    def __init__(self, x):
+        if isinstance(x, Engine):
+            self._ = x
+        else: Error.invalid("engine")
+
+    @property
+    def data(self):
+        return self._
+
+{{#-each entities}}
+class {{-pascal}}Manager(Manager):
+    pass
+
+{{/-each}}
+#
+# Engine
+#
+
+class Engine:
+
+    def __init__(self, x):
+        if isinstance(x, _model.Dataset):
+            self._ds = x
+        else: Error.invalid("dataset")
+{{#-each entities}}
+        self._{{-plural}} = None
+{{/-each}}
+
+    @property
+    def ds(self):
+        return self._ds
+
+{{#-each entities}}
+    @property
+    def {{-plural}}(self) -> {{-pascal}}Manager:
+        if self._{{-plural}}: return self._{{-plural}}
+        Error.missing(f"{{-ppascal}}")
+
+{{/-each}}
+    def print(self):
+        self.ds.print()

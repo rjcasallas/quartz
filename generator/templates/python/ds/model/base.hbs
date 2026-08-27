@@ -6,8 +6,8 @@ from quartz.log import Log
 #
 # Entities
 #
-{{#each entities}}
 
+{{#each entities}}
 class {{-pascal}}Ref(Reference):
 
     @staticmethod
@@ -20,10 +20,10 @@ class {{-pascal}}Ref(Reference):
 
 {{/each}}
 #
-# Aggregates
+# Junctions
 #
-{{#each aggregates}}
 
+{{#each junctions}}
 class {{-pascal}}Ref:
 
     def __init__(self{{#each keys}}, {{-param}}{{/each}}):
@@ -35,7 +35,7 @@ class {{-pascal}}Ref:
 {{#each keys}}
         {{-param}} = Parse.string(self.{{-field}})
 {{/each}}
-        return "{{-name}}({{#-list keys}}{{-name}}:{}{{/-list}})".format({{#-list keys}}{{-param}}{{/-list}})
+        return "{{-name}}{{#each keys}}⌗{}{{/each}}".format({{#-list keys}}{{-param}}{{/-list}})
 {{#each keys}}
 
     @property
@@ -65,5 +65,15 @@ class {{-pascal}}Ref:
             return x
         Error.invalid("{{-name}} reference", x)
 
+{{/each}}
+#
+# Self-referencing
+#
+
+{{#each recursive}}
+# {{{this}}}
+class {{-ref_from}}({{-pascal source.table}}Ref):
+    pass
 
 {{/each}}
+

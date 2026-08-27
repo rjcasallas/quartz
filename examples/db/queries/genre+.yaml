@@ -14,3 +14,15 @@ genre:
       INNER JOIN `book` b
          ON b.`id` = bg.`book_id`
       WHERE b.`id` = ?
+
+  select_ref_by_parent: |
+    @genre/select_ref
+      INNER JOIN `subgenre` sg
+         ON sg.`child_id` = g.`id`
+      WHERE sg.`parent_id` = ?
+
+  select_ref_by_child: |
+    @genre/select_ref
+      INNER JOIN `subgenre` sg
+         ON sg.`parent_id` = g.`id`
+      WHERE sg.`child_id` = ?

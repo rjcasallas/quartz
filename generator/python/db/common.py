@@ -12,7 +12,7 @@ class DatabaseHelpers(Helpers):
 
     def _ref(self, x):
         if isinstance(x, Link):
-            if x.special:
+            if x.is_recursive:
                 return self._pascal(x.name) + "Ref"
             else:
                 return self._pascal(x.target.table.name) + "Ref"
@@ -30,7 +30,7 @@ class DatabaseHelpers(Helpers):
     def ref_from(self, link):
         if not isinstance(link, Link):
             return "L({})".format(type(link))
-        if link.special:
+        if link.is_recursive:
             n = self._pascal(link.name)
             return f"{n}Ref"
         else:
@@ -40,7 +40,7 @@ class DatabaseHelpers(Helpers):
     def ref_into(self, link):
         if not isinstance(link, Link):
             return "L({})".format(type(link))
-        if link.special:
+        if link.is_recursive:
             n = self._pascal(link.name)
             return f"{n}Ref"
         else:
@@ -94,8 +94,8 @@ class DatabaseGenerator(TargetGenerator):
         super().__init__(Paths.quartz("generator/templates"), helpers or DatabaseHelpers())
         temp_db = Paths.normalize("temp/generate.db")
         os.makedirs(os.path.dirname(temp_db), exist_ok=True)
-        db = Database(schema_path)
-        db.open(temp_db, reset=True)
+        db = Database(schema_path, temp_db)
+        db.open(reset=True)
         self._meta = db.meta()
 
     def print(self):

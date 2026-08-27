@@ -1,8 +1,5 @@
-from abc import ABC, abstractmethod
-from quartz.log import Log
-from quartz.util import Parse
 from quartz.error import Error
-from enum import Enum
+from abc import ABC, abstractmethod
 
 
 class Reference:
@@ -53,14 +50,10 @@ class Reference:
             return x
 
 
-class BasicManager:
+class BasicManager(ABC):
 
     @abstractmethod
     def add(self, x: object):
-        pass
-
-    @abstractmethod
-    def update(self, x: object):
         pass
 
     @abstractmethod
@@ -68,11 +61,18 @@ class BasicManager:
         pass
 
     @abstractmethod
-    def clear(self):
+    def has(self, x = None) -> bool:
         pass
 
     @abstractmethod
-    def has(self, x = None) -> bool:
+    def clear(self):
+        pass
+
+
+class EntityManager(BasicManager):
+
+    @abstractmethod
+    def update(self, x: object):
         pass
 
     @abstractmethod
@@ -90,19 +90,3 @@ class BasicManager:
     @abstractmethod
     def all(self, x = None) -> list[object]:
         pass
-
-
-class EntityManager(BasicManager):
-
-    @abstractmethod
-    def link(self, x, y):
-        pass
-
-    @abstractmethod
-    def unlink(self, x, y):
-        pass
-
-    @abstractmethod
-    def fetch(self, x: object, id:int = None) -> object:
-        pass
-

@@ -1,0 +1,84 @@
+import {{_module}}.data._base as _base
+import {{_module}}.model._dataset as _model
+from quartz.error import Error
+
+
+class {{-pascal}}(_base.{{-pascal}}):
+
+    def __init__(self{{#each nonkeys}}, {{-name-}}=None{{/each}}, id:int=None):
+        _base.{{-pascal}}.__init__(self, {{#-list nonkeys}}{{#if into}}None{{else}}{{-name-}}{{/if}}{{/-list}}, id)
+        _base.Entity.__init__(self)
+{{#each foreign}}
+        self.{{-name-}} = {{-name-}}
+{{/each}}
+{{#each foreign}}
+
+    @property
+    def {{-name}}(self):
+        return self.{{-field-}}.id if self.{{-field-}} else None
+    @{{-name}}.setter
+    def {{-name}}(self, x):
+        pass
+
+    @property
+    def {{-name-}}(self):
+        return self.{{-field-}}
+    @{{-name-}}.setter
+    def {{-name-}}(self, x):
+        self.{{-field-}} = _base.{{-pascal into.table}}.valid(x, True, False)
+{{/each}}
+
+    def add(self, x):
+        if isinstance(x, _base.Engine):
+            return x.{{-plural}}.add(self)
+
+    def remove(self):
+        self.data.ds.{{-plural}}.remove(self)
+        self.id = None
+{{#if links}}
+
+    def link(self, x):
+        return self.data.{{-plural}}.link(self, x)
+
+    def unlink(self, x):
+        return self.data.{{-plural}}.unlink(self, x)
+
+{{/if}}
+
+class {{-pascal}}Manager(_base.{{-pascal}}Manager):
+
+    def add(self, x: {{-pascal}}):
+        return self.data.ds.{{-plural}}.add(x)
+
+    def update(self, x: {{-pascal}}):
+        return self.data.ds.{{-plural}}.update(x)
+
+    def remove(self, x: _model.{{-pascal}}Ref):
+        return self.data.ds.{{-plural}}.remove(x)
+
+    def clear(self):
+        self.data.ds.{{-plural}}.clear()
+
+    def has(self, x = None) -> bool:
+        return self.data.ds.{{-plural}}.has(x)
+{{#if lookup}}
+
+    def fetch(self, x: object, id:int = None) -> {{-pascal}}:
+        x_ = str(x)
+        {{alias}} = self.one(x_)
+        if {{alias}} is None:
+            {{alias}} = self.add({{-pascal}}(x_, id))
+        return {{alias}}
+{{/if}}
+
+    def ref(self, x = None) -> _model.{{-pascal}}Ref:
+        return self.data.ds.{{-plural}}.ref(x)
+
+    def refs(self, x = None) -> list[_model.{{-pascal}}Ref]:
+        return self.data.ds.{{-plural}}.refs(x)
+
+    def one(self, x = None) -> {{-pascal}}:
+        return self.data.ds.{{-plural}}.one(x)
+
+    def all(self, x = None) -> list[{{-pascal}}]:
+        return self.data.ds.{{-plural}}.all(x)

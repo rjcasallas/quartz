@@ -10,10 +10,10 @@ from quartz.db.query import Queries
 
 class Database:
 
-    def __init__(self, schema: str):
+    def __init__(self, schema: str, path: str = None):
         self._schema = schema
         self._db = None
-        self._path = None
+        self._path = path
         # Queries
         self._queries = Queries()
         self._load_queries()
@@ -22,17 +22,17 @@ class Database:
     def path(self):
         return self._path
 
-    def open(self, path: str = None, reset: bool = False):
-        if path is None:
+    def open(self, reset: bool = False):
+        if self._path is None:
             return self.open(os.getcwd(), reset)
         # Close
         self.close()
         # Directory?
-        if os.path.isdir(path):
-            Log.warning(f"Opening directory: {path}")
-            return self.open(os.path.join(path, self._defaultName()), reset)
+        if os.path.isdir(self._path):
+            Log.warning(f"Opening directory: {self._path}")
+            return self.open(os.path.join(self._path, self._defaultName()), reset)
         # Path exists?
-        path = Paths.normalize(path)
+        path = Paths.normalize(self._path)
         exists = os.path.isfile(path)
         if exists and reset:
             # Reset existing file
@@ -64,6 +64,16 @@ class Database:
 
     def isOpen(self):
         return self._db is not None
+
+    def print(self):
+        meta = self.meta()
+        # meta.print()
+        for t in meta.tables:
+            Log.list(t, 1)
+            rows = self.all(f"SELECT * FROM `{t}`")
+            for r in rows:
+                Log.list(str(r), 2)
+
 
     def sql(self, query, append=None):
         if query.startswith("@"):

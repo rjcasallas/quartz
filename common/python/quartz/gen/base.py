@@ -31,10 +31,8 @@ class Helpers:
         Log.warning(f"Invalid name: {x}; {type(x)}")
         return "N?".format(type(x))
 
-    def _field(self, x=None):
-        name = "_" + self._name(x)
-        # if isinstance(x, Column) and x._into:
-        #     return f"{name}_"
+    def _field(self, x=None, shorten=False):
+        name = "_" + self._name(x, shorten)
         return name
 
     def _param(self, x=None):
@@ -77,6 +75,9 @@ class Helpers:
 
     def __field(self, this, text=None):
         return self._field(text or this.context)
+
+    def __field_(self, this, text=None):
+        return self._field(text or this.context, shorten=True)
 
     def __param(self, this, text=None):
         return self._param(text or this.context)
@@ -139,6 +140,7 @@ class Helpers:
             "-name": self.__name,
             "-name-": self.__name_,
             "-field": self.__field,
+            "-field-": self.__field_,
             "-param": self.__param,
             "-plural": self.__plural,
             "-pascal": self.__pascal,

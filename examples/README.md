@@ -13,6 +13,7 @@ python generator/python/main.py sql -s examples/db/books.sql -o examples/db
 ```bash
 # Dataset
 python generator/python/main.py ds python -s examples/db/books.sql -o examples/python/ds
+python generator/python/main.py ds python -s examples/db/books.sql -o examples/python/ds -r -m -q -x -a
 ```
 
 ### Examples

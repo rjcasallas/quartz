@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import Mock, patch
 from quartz.log import Log
-from ds.sqlite._data import *
+from ds.dataset import *
+from ds.sqlite._dataset import *
 
 unittest.TestLoader.sortTestMethodsUsing = None
 
@@ -76,8 +77,8 @@ class TestA(TestBase, unittest.TestCase):
 
     def testDataset(self):
         Log.test("\nTest Dataset")
-        ds = Dataset("examples/db/books.sql")
-        ds.open("temp/books.db", reset=True)
+        ds = Dataset("examples/db/books.sql", "temp/books.db")
+        ds.open(reset=True)
         self.checkAdd(ds)
         self.checkAddJoins(ds)
         self.checkUpdate(ds)
@@ -226,55 +227,52 @@ class TestA(TestBase, unittest.TestCase):
 
     def checkAddJoins(self, ds):
         Log.list("Add Joins")
-        # author -> book
-        ds.books.link(self.fakebook_, self.dumas_)  # Intentionally wrong
         # book -> author
-        ds.books.link(self.illiad_, self.homer_)
-        ds.books.link(self.odyssey_, self.homer_)
-        ds.books.link(self.quixote_, self.cervantes_)
-        ds.books.link(self.gulliver_, self.swift_)
-        ds.books.link(self.les_trois_, self.dumas_)
-        ds.books.link(self.animal_, self.orwell_)
-        ds.books.link(self.ninety_, self.orwell_)
-        ds.books.link(self.maize_, self.asturias_)
-        ds.books.link(self.dune_, self.hebert_)
-        ds.books.link(self.solitude_, self.gabo_)
-        ds.books.link(self.hitchhiker_, self.adams_)
-        ds.books.link(self.restaurant_, self.adams_)
-        ds.books.link(self.everything_, self.adams_)
-        ds.books.link(self.thanks_, self.adams_)
-        ds.books.link(self.harmless_, self.adams_)
-        ds.books.link(self.the_code_, self.brown_)
-        ds.books.link(self.fakebook_, self.cervantes_)  # Intentionally wrong
-        # book -> genre
-        ds.books.link(self.illiad, ds.genres.ref("Adventure"))
-        ds.books.link(self.quixote, self.novel)
-        ds.books.link(self.gulliver, self.satire)
-        ds.books.link(self.le_comte, self.adventure)
-        ds.books.link(self.les_trois, ds.genres.ref("Novel"))
-        ds.books.link(self.animal, self.satire)
-        ds.books.link(self.ninety, self.fantasy)
-        ds.books.link(self.ninety, ds.genres.ref("Satire"))
-        ds.books.link(self.dune, self.sci_fi)
-        ds.books.link(self.maize, self.novel)
-        ds.books.link(self.dune, self.sci_fi)
-        ds.books.link(self.dune, self.comedy)  # To be deleted
-        ds.books.link(self.dune, self.satire)  # To be deleted
-        # genre -> book
-        ds.books.link(self.animal, self.adventure)  # To be deleted
-        ds.books.link(self.ninety, self.comedy)  # To be deleted
-        ds.books.link(ds.books.ref("Dune"), self.sci_fi)
-        ds.books.link(self.solitude, self.fantasy)
-        ds.books.link(self.hitchhiker, self.comedy)
-        ds.books.link(self.restaurant, self.comedy)
-        ds.books.link(self.everything, self.comedy)
-        ds.books.link(self.thanks, self.comedy)
-        ds.books.link(self.harmless, self.comedy)
-        ds.books.link(self.hitchhiker, self.sci_fi)
-        ds.books.link(self.restaurant, self.sci_fi)
-        ds.books.link(self.everything, self.sci_fi)
-        ds.books.link(self.thanks, self.sci_fi)
-        ds.books.link(self.harmless, self.sci_fi)
+        ds.book_authors.add(BookAuthor(self.fakebook_, self.dumas_))  # Intentionally wrong
+        ds.book_authors.add(BookAuthor(self.illiad_, self.homer_))
+        ds.book_authors.add(BookAuthor(self.odyssey_, self.homer_))
+        ds.book_authors.add(BookAuthor(self.quixote_, self.cervantes_))
+        ds.book_authors.add(BookAuthor(self.gulliver_, self.swift_))
+        ds.book_authors.add(BookAuthor(self.les_trois_, self.dumas_))
+        ds.book_authors.add(BookAuthor(self.animal_, self.orwell_))
+        ds.book_authors.add(BookAuthor(self.ninety_, self.orwell_))
+        ds.book_authors.add(BookAuthor(self.maize_, self.asturias_))
+        ds.book_authors.add(BookAuthor(self.dune_, self.hebert_))
+        ds.book_authors.add(BookAuthor(self.solitude_, self.gabo_))
+        ds.book_authors.add(BookAuthor(self.hitchhiker_, self.adams_))
+        ds.book_authors.add(BookAuthor(self.restaurant_, self.adams_))
+        ds.book_authors.add(BookAuthor(self.everything_, self.adams_))
+        ds.book_authors.add(BookAuthor(self.thanks_, self.adams_))
+        ds.book_authors.add(BookAuthor(self.harmless_, self.adams_))
+        ds.book_authors.add(BookAuthor(self.the_code_, self.brown_))
+        ds.book_authors.add(BookAuthor(self.fakebook_, self.cervantes_))  # Intentionally wrong
+        ds.book_genres.add(BookGenreRef(self.illiad, ds.genres.ref("Adventure")))
+        ds.book_genres.add(BookGenreRef(self.quixote, self.novel))
+        ds.book_genres.add(BookGenreRef(self.gulliver, self.satire))
+        ds.book_genres.add(BookGenreRef(self.le_comte, self.adventure))
+        ds.book_genres.add(BookGenreRef(self.les_trois, ds.genres.ref("Novel")))
+        ds.book_genres.add(BookGenreRef(self.animal, self.satire))
+        ds.book_genres.add(BookGenreRef(self.ninety, self.fantasy))
+        ds.book_genres.add(BookGenreRef(self.ninety, ds.genres.ref("Satire")))
+        ds.book_genres.add(BookGenreRef(self.dune, self.sci_fi))
+        ds.book_genres.add(BookGenreRef(self.maize, self.novel))
+        ds.book_genres.add(BookGenreRef(self.dune, self.sci_fi))
+        ds.book_genres.add(BookGenreRef(self.dune, self.comedy))  # To be deleted
+        ds.book_genres.add(BookGenreRef(self.dune, self.satire))  # To be deleted
+        ds.book_genres.add(BookGenreRef(self.animal, self.adventure))  # To be deleted
+        ds.book_genres.add(BookGenreRef(self.ninety, self.comedy))  # To be deleted
+        ds.book_genres.add(BookGenreRef(ds.books.ref("Dune"), self.sci_fi))
+        ds.book_genres.add(BookGenreRef(self.solitude, self.fantasy))
+        ds.book_genres.add(BookGenreRef(self.hitchhiker, self.comedy))
+        ds.book_genres.add(BookGenreRef(self.restaurant, self.comedy))
+        ds.book_genres.add(BookGenreRef(self.everything, self.comedy))
+        ds.book_genres.add(BookGenreRef(self.thanks, self.comedy))
+        ds.book_genres.add(BookGenreRef(self.harmless, self.comedy))
+        ds.book_genres.add(BookGenreRef(self.hitchhiker, self.sci_fi))
+        ds.book_genres.add(BookGenreRef(self.restaurant, self.sci_fi))
+        ds.book_genres.add(BookGenreRef(self.everything, self.sci_fi))
+        ds.book_genres.add(BookGenreRef(self.thanks, self.sci_fi))
+        ds.book_genres.add(BookGenreRef(self.harmless, self.sci_fi))
 
     def checkUpdate(self, ds):
         Log.list("Update")
@@ -296,7 +294,7 @@ class TestA(TestBase, unittest.TestCase):
         self.le_comte.title = title
         self.le_comte.year = year
         ds.books.update(self.le_comte)
-        ds.books.link(self.le_comte, self.dumas)
+        ds.book_authors.add(BookAuthor(self.le_comte, self.dumas))
         b = ds.books.one(self.le_comte)
         self.assertEqual(b.title, title)
         self.assertEqual(b.year, year)
@@ -305,7 +303,7 @@ class TestA(TestBase, unittest.TestCase):
         # Update book
         title = self.harmless.title
         year = 1992
-        ds.books.link(self.harmless, self.adams)
+        ds.book_authors.add(BookAuthor(self.harmless, self.adams))
         self.harmless.year = year
         self.harmless = ds.books.update(self.harmless)
         b = ds.books.one(self.harmless)
@@ -406,17 +404,16 @@ class TestA(TestBase, unittest.TestCase):
     def checkDeleteJoins(self, ds):
         Log.list("Delete Joins")
         # Delete author
-        ds.books.unlink(self.fakebook_, self.cervantes)
-        # Delete book
-        ds.books.unlink(self.fakebook, self.dumas)
+        ds.book_authors.remove(BookAuthorRef(self.fakebook_, self.cervantes))
+        ds.book_authors.remove(BookAuthorRef(self.fakebook, self.dumas))
         # Delete book genre
-        ds.books.unlink(self.dune, self.comedy)
-        ds.books.unlink(self.dune, self.fantasy)
-        ds.books.unlink(self.dune, self.satire)
+        ds.book_genres.remove(BookGenreRef(self.dune, self.comedy))
+        ds.book_genres.remove(BookGenreRef(self.dune, self.fantasy))
+        ds.book_genres.remove(BookGenreRef(self.dune, self.satire))
         # Delete genre book
-        ds.books.unlink(self.animal, self.adventure)
-        ds.books.unlink(self.dune, self.comedy)
-        ds.books.unlink(self.ninety, self.comedy)
+        ds.book_genres.remove(BookGenreRef(self.animal, self.adventure))
+        ds.book_genres.remove(BookGenreRef(self.dune, self.comedy))
+        ds.book_genres.remove(BookGenreRef(self.ninety, self.comedy))
         # Check book genres (refs)
         expected = [
             self.hitchhiker,

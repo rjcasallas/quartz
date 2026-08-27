@@ -1,0 +1,38 @@
+import {{_module}}.model._dataset as _base
+{{#-each entities}}
+from {{_module}}.sqlite.{{-name}} import *
+{{/-each}}
+import quartz.db.sqlite as _sqlite
+
+#
+# Managers
+#
+
+{{#-each entities}}
+class {{-pascal}}Manager({{-pascal}}Manager):
+    pass
+
+
+{{/-each}}
+#
+# Dataset
+#
+
+class Dataset(_base.Dataset):
+
+    def __init__(self, schema_path, file_path:str):
+        super().__init__()
+        self._db = _sqlite.Database(schema_path, file_path)
+{{#-each entities}}
+        self._{{-plural}} = {{-pascal}}Manager(self, self._db)
+{{/-each}}
+
+    @property
+    def path(self):
+        return self._db.path
+
+    def open(self, reset: bool = False):
+        self._db.open(reset)
+
+    def isOpen(self):
+        return self._db.isOpen()

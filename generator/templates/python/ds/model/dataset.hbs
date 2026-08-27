@@ -1,9 +1,24 @@
-from {{_module}}.model._reference import *
+from {{_module}}.model._base import *
 {{#-each entities aggregates}}
 from {{_module}}.model.{{-name}} import *
 {{/-each}}
+import quartz.gen.data as _base
 from quartz.error import Error
 from quartz.log import Log
+
+#
+# Manager
+#
+
+class Manager:
+    def __init__(self, x):
+        if isinstance(x, Dataset):
+            self._ds = x
+        else: Error.invalid("dataset")
+
+    @property
+    def ds(self):
+        return self._ds
 
 #
 # Dataset
@@ -11,27 +26,19 @@ from quartz.log import Log
 
 class Dataset:
 
-    class Manager:
-        def __init__(self, ds):
-            self._ds = ds
-
-        @property
-        def ds(self):
-            return self._ds
-
-{{#-each entities aggregates}}
-    class {{-ppascal}}(Manager, {{-pascal}}Manager):
+{{#-each tables}}
+    class {{-ppascal}}(Manager, _base.{{#if nonkeys}}Entity{{else}}Basic{{/if}}Manager):
         pass
 
 {{/-each}}
     def __init__(self):
-{{#-each entities aggregates}}
+{{#-each tables}}
         self._{{-plural}} = None
 {{/-each}}
 
-{{#-each entities aggregates}}
+{{#-each tables}}
     @property
-    def {{-plural}}(self) -> 'Dataset.Manager':
+    def {{-plural}}(self) -> {{-ppascal}}:
         if self._{{-plural}} is None: Error.fail(f"Not initialized: {{-plural}}.")
         return self._{{-plural}}
 

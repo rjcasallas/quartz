@@ -1,6 +1,5 @@
-from ds.model._reference import *
+from ds.model._base import *
 from ds.model.publisher import *
-import quartz.gen.data as _data
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -10,7 +9,7 @@ from quartz.util import Parse
 
 class Publisher(PublisherRef):
 
-    def __init__(self, parent_id = None, name = None, id = None):
+    def __init__(self, parent_id=None, name=None, id=None):
         super().__init__(id)
         self.parent_id = parent_id
         self.name = name
@@ -42,13 +41,6 @@ class Publisher(PublisherRef):
     def name(self, x):
         self._name = x
 
-    def copy(self, x):
-        if isinstance(x, Publisher):
-            super().copy(x)
-            self.parent_id = x.parent_id
-            self.name = x.name
-        return self
-
     @staticmethod
     def valid(x, nullable = False):
         if nullable and (x is None):
@@ -56,16 +48,3 @@ class Publisher(PublisherRef):
         if isinstance(x, Publisher):
             return x
         Error.invalid("publisher", x)
-
-#
-# Manager
-#
-
-class PublisherManager(_data.EntityManager):
-
-    def fetch(self, x, id = None):
-        x_ = str(x)
-        p = self.one(x_)
-        if p is None:
-            p = self.add(Publisher(x_, id))
-        return p

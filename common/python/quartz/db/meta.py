@@ -20,6 +20,107 @@ class Column:
         def __str__(self):
             return self.name.lower()
 
+    def __init__(self, table: "Table", name: str, type_: str, notnull: bool = False, default=None, pk: bool = False, auto: bool = False):
+        # Info
+        self._table = table
+        self._name = name
+        self._alias = Format.abbreviate(name)
+        self._type = Column.parse(type_)
+        self._notnull = notnull
+        self._default = default
+        self._pk = pk
+        self._auto = auto
+        # Indexes
+        self._indexed = False
+        self._unique = False
+        # Foreign keys
+        self._into = None
+        self._from = []
+
+    def __str__(self):
+        return f"{self._name}"
+
+    def __eq__(self, other: "Column"):
+        return (self._table == other._table) and (self._name == other._name)
+
+    def __hash__(self):
+        return hash(self._name)
+
+    def __repr__(self):
+        type_ = (self._type.name.lower() if isinstance(self._type, Column.Type) else str(self._type).lower())
+        notnull = Parse.string(Parse.boolean(self._notnull))
+        default = Parse.string(self._default)
+        pk = Parse.string(Parse.boolean(self._pk))
+        indexed = Parse.string(Parse.boolean(self._indexed))
+        unique = Parse.string(Parse.boolean(self._unique))
+        return f'"{self._name}", type:{type_}, notnull:{notnull}, default:{default}, pk:{pk}, indexed:{indexed}, unique:{unique}'
+
+    @property
+    def table(self) -> "Table":
+        return self._table
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def alias(self) -> str:
+        return self._alias
+
+    @property
+    def type(self) -> str:
+        return self._type
+
+    @property
+    def is_notnull(self) -> str:
+        return self._notnull
+
+    @property
+    def is_pk(self) -> str:
+        return self._pk
+
+    @property
+    def is_auto(self) -> str:
+        return self._auto
+
+    @property
+    def is_indexed(self) -> str:
+        return self._indexed
+
+    @property
+    def is_foreign(self) -> bool:
+        return self._into is not None
+
+    @property
+    def from_(self):
+        return self._from
+
+    @property
+    def into(self):
+        return self._into
+
+    @into.setter
+    def into(self, col):
+        self._into = col
+        self._indexed = True
+        col._from.append(self)
+
+    def index(self, indexed: bool = True, unique: bool = False):
+        self._indexed = self._indexed or indexed
+        self._unique = unique
+        if (self.table.lookup is None) and (Column.Type.Text == self._type):
+            self.table.lookup = self
+
+    def print(self, level: int = 0):
+        bullet = "★" if self.auto else "✦" if self._pk else "∙"
+        Log.list(repr(self), level, bullet)
+        if self._into:
+            into = Parse.string(f"{self._into.table}.{self._into}")
+            Log.list(into, level + 1, "▴")
+        for f in self._from:
+            from_ = Parse.string(f"{f.table}.{f._name}")
+            Log.list(from_, level + 1, "▾")
+
     @staticmethod
     def parse(x) -> "Column.Type":
         if not isinstance(x, str):
@@ -51,148 +152,29 @@ class Column:
         else:
             return Column.Type.Unknown
 
-    def __init__(
-        self,
-        table: "Table",
-        name: str,
-        type_: str,
-        notnull: bool = False,
-        default=None,
-        pk: bool = False,
-        auto: bool = False,
-    ):
-        # Info
-        self._table = table
-        self._name = name
-        self._alias = Format.abbreviate(name)
-        self._type = Column.parse(type_)
-        self._notnull = notnull
-        self._default = default
-        self._pk = pk
-        self._auto = auto
-        # Indexes
-        self._indexed = False
-        self._unique = False
-        # Foreign keys
-        self._into = None
-        self._from = []
-
-    def __str__(self):
-        return f"{self._name}"
-
-    def __eq__(self, other: "Column"):
-        return self._name == other._name
-
-    def __hash__(self):
-        return hash(
-            (
-                self._name,
-                self._type,
-                self._notnull,
-                self._default,
-                self._pk,
-                self._auto,
-                self._indexed,
-                self._unique,
-                self._into,
-            )
-        )
-
-    def __repr__(self):
-        type_ = (
-            self._type.name.lower()
-            if isinstance(self._type, Column.Type)
-            else str(self._type).lower()
-        )
-        notnull = Parse.string(Parse.boolean(self._notnull))
-        default = Parse.string(self._default)
-        pk = Parse.string(Parse.boolean(self._pk))
-        # auto = Parse.string(Parse.boolean(self._auto))
-        indexed = Parse.string(Parse.boolean(self._indexed))
-        unique = Parse.string(Parse.boolean(self._unique))
-        return f'"{self._name}", type:{type_}, notnull:{notnull}, default:{default}, pk:{pk}, indexed:{indexed}, unique:{unique}'
-
-    @property
-    def table(self) -> "Table":
-        return self._table
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def alias(self) -> str:
-        return self._alias
-
-    @property
-    def type(self) -> str:
-        return self._type
-
-    @property
-    def notnull(self) -> str:
-        return self._notnull
-
-    @property
-    def pk(self) -> str:
-        return self._pk
-
-    @property
-    def auto(self) -> str:
-        return self._auto
-
-    @property
-    def indexed(self) -> str:
-        return self._indexed
-
-    @property
-    def foreign(self) -> bool:
-        return self._into is not None
-
-    @property
-    def into(self):
-        return self._into
-
-    @into.setter
-    def into(self, col):
-        self._into = col
-        self._indexed = True
-        col._from.append(self)
-
-    def index(self, indexed: bool = True, unique: bool = False):
-        self._indexed = self._indexed or indexed
-        self._unique = unique
-        if (self.table._lookup is None) and (Column.Type.Text == self._type):
-            self.table._lookup = self
-
-    def print(self, level: int = 0):
-        bullet = "★" if self.auto else "✦" if self._pk else "∙"
-        Log.list(repr(self), level, bullet)
-        if self._into:
-            into = Parse.string(f"{self._into.table}.{self._into}")
-            Log.list(into, level + 1, "▴")
-        for f in self._from:
-            from_ = Parse.string(f"{f.table}.{f._name}")
-            Log.list(from_, level + 1, "▾")
-
 
 class Link:
 
-    def __init__(self, source: Column, from_: Column, into: Column):
+    def __init__(self, source: Column, from_: Column, into: Column, target: Column):
         if not isinstance(source, Column):
             Error.invalid("column", source)
         if not isinstance(from_, Column):
             Error.invalid("from", from_)
         if not isinstance(into, Column):
             Error.invalid("into", into)
-        i_name = into._name.removesuffix("_id")
-        self._name = f"{source.table.name}_{i_name}"
-        self._alias = Format.abbreviate(self._name)
+        if not isinstance(target, Column):
+            Error.invalid("target", target)
         self._source = source
         self._from = from_
         self._into = into
-        self._target = into._into
-        self._special = False
+        self._target = target
+        self._is_recursive = (self._source.table == self._target.table)
         self._key = from_.name.removesuffix("_id")
+        if self._is_recursive:
+            self._name = f"{self._key}_{target.table.name}"
+        else:
+            self._name = f"{target.table.name}_{source.table.name}"
+        self._alias = Format.abbreviate(self._name)
 
     def __str__(self):
         return f'"{self._name}" {self._source.table}.{self._source} → {self._target.table}.{self._target}'  # ➤
@@ -236,8 +218,8 @@ class Link:
         return self._target
 
     @property
-    def special(self) -> bool:
-        return self._special
+    def is_recursive(self) -> bool:
+        return self._is_recursive
 
 
 class Table:
@@ -253,21 +235,23 @@ class Table:
         def __str__(self):
             return self.name.lower()
 
-    def __init__(self, name: str, type_: "Table.Type" = None, columns: list = None):
+    def __init__(self, name: str, type_: "Table.Type"=None, columns:list[Column]=None):
         self._name = name
         self._alias = Format.abbreviate(name)
         self._type = type_ or Table.Type.Unknown
-        self._columns = columns or []
-        self._auto = None  # columns
-        self._parent = None
+        self._columns = columns or []  # list[Column]
+        self._parent = None # table
+        self._auto = None  # column
         self._lookup = None  # column
         self._singular = False
-        self._keys = []
+        self._keys = []  # list[Column]
         self._nonkeys = []
-        self._nonauto = []
-        self._indexed = []
-        self._links = {}
-        self._references = {}  # Links
+        self._foreign = [] # list[Column]
+        self._nonauto = [] # list[Column]
+        self._indexed = [] # list[Column]
+        self._links = {}    # Links (by key)
+        self._recursive = {}     # Links (by into)
+        # self._references = {}
 
     def __str__(self):
         return self._name
@@ -309,6 +293,10 @@ class Table:
     @property
     def lookup(self) -> Column:
         return self._lookup
+    @lookup.setter
+    def lookup(self, x):
+        if not isinstance(x, Column): Error.invalid("lookup")
+        self._lookup = x
 
     @property
     def singular(self) -> str:
@@ -327,6 +315,10 @@ class Table:
         return self._nonkeys
 
     @property
+    def foreign(self) -> list[Column]:
+        return self._foreign
+
+    @property
     def nonauto(self) -> list[Column]:
         return self._nonauto
 
@@ -335,8 +327,8 @@ class Table:
         return list(self._links.values())
 
     @property
-    def references(self) -> list[Link]:
-        return list(self._references.values())
+    def recursive(self) -> list[Link]:
+        return list(self._recursive.values())
 
     @property
     def indexed(self) -> list[Column]:
@@ -370,13 +362,15 @@ class Table:
     def compile(self, config):
         # Classif columns
         for col in self.columns:
-            if col.pk:
+            if col.is_pk:
                 self.keys.append(col)
             else:
                 self.nonkeys.append(col)
-                if col.indexed:
+                if col.is_indexed:
                     self.indexed.append(col)
-            if col.auto:
+                if col.into:
+                    self.foreign.append(col)
+            if col.is_auto:
                 self._auto = col
             else:
                 self.nonauto.append(col)
@@ -392,16 +386,20 @@ class Table:
     def link(self):
         # Create links
         for col in self.columns:
-            for f in col._from:
-                if (Table.Type.Junction == f.table.type) or (
-                    Table.Type.Aggregate == f.table.type
-                ):
+            for f in col.from_:
+                if (Table.Type.Junction == f.table.type) or (Table.Type.Aggregate == f.table.type):
                     for c in f.table.columns:
                         if c != f and c.into:
-                            l = Link(col, f, c)
-                            if l.name not in self._links:
-                                self._links[l.name] = l
-                                c.table._references[l.name] = l
+                            self._link(c.into, f, c, col)
+                else:
+                    self._link(f, f, col, col)
+
+    def _link(self, src_c, from_c, into_c, target_c):
+        l = Link(src_c, from_c, into_c, target_c)
+        if l.name not in self._links:
+            self._links[l.name] = l
+        if l.is_recursive and l.target.table.name not in self._recursive:
+            self._recursive[l.target.table.name] = l
 
     def _classify(self) -> "Table.Type":
         pk_count = len(self.keys)
@@ -422,11 +420,12 @@ class Table:
         Log.list(repr(self), level, "▪︎")
         for col in self.columns:
             col.print(level + 1)
-        for link in self._links:
-            Log.list(repr(link), level + 1, "⦿")
-        for link in self.references:
-            Log.list(repr(link), level + 1, "○")
-        Log.list(self.lookup.name if self.lookup else "No lookup", level + 1, "◇")
+        for l in self.links:
+            Log.list(repr(l), level + 1, "⦿")
+        for l in self.references:
+            Log.list(repr(l), level + 1, "○")
+        if self.lookup:
+            Log.list(f"lookup: {self.lookup.name}", level + 1, "◇")
         # Log.debug(f"Keys: {[col.name for col in self.keys]}")
 
 
@@ -438,7 +437,7 @@ class Schema:
         self._entities = []
         self._junctions = []
         self._aggregates = []
-        self._specials = {}
+        self._recursive = {}
         self._filters = {}
         # configuration
         config_path = "{}/meta.yaml".format(os.path.dirname(schema_path))
@@ -474,8 +473,8 @@ class Schema:
         return self._aggregates
 
     @property
-    def specials(self) -> list[Table]:
-        return self._specials
+    def recursive(self) -> list[Table]:
+        return self._recursive
 
     @property
     def filters(self) -> list[Table]:
@@ -513,9 +512,8 @@ class Schema:
         for t in self._tables.values():
             t.link()
             for l in t.links:
-                l._special = l.key not in self._tables
-                if l.special:
-                    self._specials[l.name] = l
+                if l.is_recursive:
+                    self._recursive[l.name] = l
         # Sort
         self._entities = sorted(entities, key=lambda t: t.name)
         self._junctions = sorted(junctions, key=lambda t: t.name)

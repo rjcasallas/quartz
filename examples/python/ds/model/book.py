@@ -1,6 +1,5 @@
-from ds.model._reference import *
+from ds.model._base import *
 from ds.model.publisher import *
-import quartz.gen.data as _data
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -10,7 +9,7 @@ from quartz.util import Parse
 
 class Book(BookRef):
 
-    def __init__(self, publisher_id = None, title = None, year = None, id = None):
+    def __init__(self, publisher_id=None, title=None, year=None, id=None):
         super().__init__(id)
         self.publisher_id = publisher_id
         self.title = title
@@ -51,14 +50,6 @@ class Book(BookRef):
     def year(self, x):
         self._year = x
 
-    def copy(self, x):
-        if isinstance(x, Book):
-            super().copy(x)
-            self.publisher_id = x.publisher_id
-            self.title = x.title
-            self.year = x.year
-        return self
-
     @staticmethod
     def valid(x, nullable = False):
         if nullable and (x is None):
@@ -66,16 +57,3 @@ class Book(BookRef):
         if isinstance(x, Book):
             return x
         Error.invalid("book", x)
-
-#
-# Manager
-#
-
-class BookManager(_data.EntityManager):
-
-    def fetch(self, x, id = None):
-        x_ = str(x)
-        b = self.one(x_)
-        if b is None:
-            b = self.add(Book(x_, id))
-        return b

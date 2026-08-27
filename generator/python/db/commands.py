@@ -9,7 +9,7 @@ class DatabaseCommand(BasicCommand):
 
     def setup(self) -> None:
         self.args.dashed.add("schema", "s", Types.Path, "examples/db/books.sql")
-        self.args.dashed.add("database", "d", Types.Path, "temp/generate.sqlite")
+        self.args.dashed.add("file", "f", Types.Path, "temp/generate.sqlite")
         self.args.dashed.add("templates", "t", Types.Path, "generator/templates")
         self.args.dashed.add("out", "o", Types.Path)
 
@@ -44,7 +44,8 @@ class PythonDatasetCommand(DatabaseCommand):
         self.args.dashed.add("refs", "r", Types.Flag)
         self.args.dashed.add("model", "m", Types.Flag)
         self.args.dashed.add("sqlite", "q", Types.Flag)
-        self.args.dashed.add("data", "d", Types.Flag)
+        self.args.dashed.add("extras", "x", Types.Flag)
+        self.args.dashed.add("api", "a", Types.Flag)
 
     def execute(self):
         super().execute()
@@ -55,10 +56,10 @@ class PythonDatasetCommand(DatabaseCommand):
         if self.args.boolean("refs"):   flags |= DatasetFlags.Refs
         if self.args.boolean("model"):  flags |= DatasetFlags.Model
         if self.args.boolean("sqlite"): flags |= DatasetFlags.Sqlite
-        if self.args.boolean("data"):   flags |= DatasetFlags.Dataset
+        if self.args.boolean("extras"): flags |= DatasetFlags.Extra
+        if self.args.boolean("api"):    flags |= DatasetFlags.API
 
         gen = PythonDatasetGenerator(schema)
-        gen.print()
         gen.generate(out, mod, flags)
 
 
