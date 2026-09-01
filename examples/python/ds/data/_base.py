@@ -11,65 +11,42 @@ from abc import ABC, abstractmethod
 class Entity(ABC):
 
     def __init__(self, x=None):
-        self.data = x
+        self.api = x
 
     @property
-    def data(self):
+    def api(self):
         if self._ is None: Error.fail("Detached")
         return self._
-    @data.setter
-    def data(self, x):
-        if isinstance(x, Engine) or (x is None):
-            self._ = x
-        else: Error.invalid("engine")
+    @api.setter
+    def api(self, x):
+        self._ = Engine.valid(x, nullable=True)
 
+    def attach(self, x:Engine):
+        self._ = Engine.valid(x)
+        return self
 
-class Author(_model.Author, Entity):
-
-    @staticmethod
-    def valid(x, nullable=False, dettached=True):
-        if nullable and (x is None):
-            return None
-        if isinstance(x, Author):
-            if dettached or x.id:
-                return x
-        Error.invalid("author", x)
-
-
-class Book(_model.Book, Entity):
+    def detach(self):
+        self._ = None
+        return self
 
     @staticmethod
     def valid(x, nullable=False, dettached=True):
         if nullable and (x is None):
             return None
-        if isinstance(x, Book):
+        if isinstance(x, Entity):
             if dettached or x.id:
                 return x
-        Error.invalid("book", x)
+        Error.invalid("entity", x)
 
 
-class Genre(_model.Genre, Entity):
+class Submanager:
 
-    @staticmethod
-    def valid(x, nullable=False, dettached=True):
-        if nullable and (x is None):
-            return None
-        if isinstance(x, Genre):
-            if dettached or x.id:
-                return x
-        Error.invalid("genre", x)
+    def __init__(self, ent:Entity):
+        self._ = Entity.valid(ent)
 
-
-class Publisher(_model.Publisher, Entity):
-
-    @staticmethod
-    def valid(x, nullable=False, dettached=True):
-        if nullable and (x is None):
-            return None
-        if isinstance(x, Publisher):
-            if dettached or x.id:
-                return x
-        Error.invalid("publisher", x)
+    @property
+    def api(self):
+        return self._.api
 
 #
 # Managers
@@ -78,12 +55,10 @@ class Publisher(_model.Publisher, Entity):
 class Manager(_base.EntityManager):
 
     def __init__(self, x):
-        if isinstance(x, Engine):
-            self._ = x
-        else: Error.invalid("engine")
+        self._ = Engine.valid(x)
 
     @property
-    def data(self):
+    def api(self):
         return self._
 
 class AuthorManager(Manager):
@@ -139,3 +114,11 @@ class Engine:
 
     def print(self):
         self.ds.print()
+
+    @staticmethod
+    def valid(x, nullable=False, dettached=True):
+        if nullable and (x is None):
+            return None
+        if isinstance(x, Engine):
+            return x
+        Error.invalid("engine", x)

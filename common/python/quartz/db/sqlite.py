@@ -1,11 +1,12 @@
-import sqlite3
-import os
-import re
 from quartz.db.meta import Schema, Table, Column
 from quartz.log import Log
 from quartz.file import Paths
 from quartz.error import Error
 from quartz.db.query import Queries
+import pathlib
+import sqlite3
+import os
+import re
 
 
 class Database:
@@ -22,7 +23,7 @@ class Database:
     def path(self):
         return self._path
 
-    def open(self, reset: bool = False):
+    def open(self, reset: bool=False):
         if self._path is None:
             return self.open(os.getcwd(), reset)
         # Close
@@ -81,7 +82,7 @@ class Database:
             query = self._queries[name]
         return query + (append and f"\n{append}" or "")
 
-    def exec(self, query, params=[], debug: bool = False):
+    def exec(self, query, params=[], debug: bool=False):
         self._validateOpen()
         sql = self.sql(query)
         if debug:
@@ -91,11 +92,9 @@ class Database:
         self._db.commit()
         return cur.lastrowid
 
-    def one(self, query, params=None, debug=False, limit: bool = False):
+    def one(self, query, params=None, tail:str=None, debug=False):
         self._validateOpen()
-        sql = self.sql(query)
-        if limit:
-            sql += f" LIMIT 1"
+        sql = self.sql(query) + (f"\n{tail}" if tail else "")
         params = params or []
         if debug:
             self._debug(query, sql, params)
@@ -103,9 +102,9 @@ class Database:
         res = cur.execute(sql, params)
         return res.fetchone()
 
-    def all(self, query: str, params: tuple = None, debug: bool = False) -> list:
+    def all(self, query: str, params: tuple=None, tail:str=None, debug: bool=False) -> list:
         self._validateOpen()
-        sql = self.sql(query)
+        sql = self.sql(query) + (f"\n{tail}" if tail else "")
         if debug:
             self._debug(query, sql, params)
         cur = self._db.cursor()
@@ -150,7 +149,7 @@ class Database:
             schema.add(table)
 
         # Second pass: resolve foreign key references to actual Column instances
-        for table in schema.tables.values():
+        for table in schema.tables:
             for row in self.all(f"PRAGMA foreign_key_list('{table.name}');"):
                 from_col = table.find(row[3])  # 'from' column
                 into_table = schema.find(row[2])  # referenced table
@@ -184,16 +183,21 @@ class Database:
 
     def _load_queries(self):
         # Try schema.yaml
-        path = Paths.replacex(self._schema, ".yaml")
-        if os.path.isfile(path):
+        schema = pathlib.Path(self._schema)
+        path = schema.with_suffix(".yaml")
+        if path.is_file():
             self._queries.load(path)
         # Try schema/queries/*.yaml
-        path = os.path.join(os.path.dirname(self._schema), "queries")
-        if os.path.isdir(path):
-            self._queries.load(path)
+        queries = path.parent / "queries"
+        if queries.is_dir():
+            self._queries.load(queries)
+        # Try schema/queries+/*.yaml
+        queries = path.parent / "queries+"
+        if queries.is_dir():
+            self._queries.load(queries)
 
     def _debug(self, query, sql, params):
         if query.startswith("@"):
             Log.debug("[{}]\n{}\n{}".format(query[1:], sql, params))
         else:
-            Log.debug("\nQ:\n{}\n{}".format(sql, params))
+            Log.debug("\n{}\n{}".format(sql, params))

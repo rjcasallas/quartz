@@ -1,5 +1,4 @@
 from ds.model._base import *
-from ds.model.publisher import *
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -15,7 +14,7 @@ class Publisher(PublisherRef):
         self.name = name
 
     def __str__(self):
-        return self._name
+        return Parse.string(self._name)
 
     def __repr__(self):
         ref = super().__repr__()

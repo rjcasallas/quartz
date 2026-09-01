@@ -1,0 +1,15 @@
+import {{_module}}.core as _core
+import {{_module}}.data.{{-name}} as _base
+from ds.data._base import Submanager
+
+
+class {{-pascal}}(_base.{{-pascal}}):
+
+    def __init__(self, {{#-list nonkeys keys}}{{-param}}=None{{/-list}}, api=None):
+        super().__init__({{#-list nonkeys keys}}{{-param}}{{/-list}}, api)
+
+
+class {{-pascal}}Manager(_base.{{-pascal}}Manager):
+
+    def _create(self, x):
+        return {{-pascal}}({{#each columns}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}}).attach(self.api)

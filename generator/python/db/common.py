@@ -10,14 +10,17 @@ import os
 
 class DatabaseHelpers(Helpers):
 
-    def _ref(self, x):
-        if isinstance(x, Link):
-            if x.is_recursive:
-                return self._pascal(x.name) + "Ref"
-            else:
-                return self._pascal(x.target.table.name) + "Ref"
+    def _core(self, x):
         if isinstance(x, Table):
             name = self._pascal(x)
+            return name
+            # return f"{name}X" # Debug only
+        return f"CORE?({type(x)}|{x})"
+
+    def _ref(self, x):
+        if isinstance(x, Table):
+            name = self._pascal(x)
+            # if Table.Type.Aggregate == x.type:
             return f"{name}Ref"
         if isinstance(x, Column):
             if x.into:
@@ -25,6 +28,11 @@ class DatabaseHelpers(Helpers):
                 return f"{name}Ref"
             else:
                 return self._ref(x.table)
+        if isinstance(x, Link):
+            if x.is_recursive:
+                return self._pascal(x.name) + "Ref"
+            else:
+                return self._pascal(x.target.table.name) + "Ref"
         return f"REF?({type(x)}|{x})"
 
     def ref_from(self, link):
@@ -67,6 +75,9 @@ class DatabaseHelpers(Helpers):
             # return f"{from_c._table._name}.{from_c._name}->{into_c._table._name}.{into_c._name}"
         return 'query?'
 
+    def __core(self, this, text = None):
+        return self._core(text or this.context)
+
     def __ref(self, this, text = None):
         return self._ref(text or this.context)
 
@@ -78,6 +89,7 @@ class DatabaseHelpers(Helpers):
 
     def compile(self):
         return super().compile() | {
+            "-core": self.__core,
             "-ref": self.__ref,
             "-ref_from": self.__ref_from,
             "-ref_into": self.__ref_into,

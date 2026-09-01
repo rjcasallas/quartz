@@ -1,31 +1,39 @@
+from {{_module}}.model._base import *
+import {{_module}}.model.{{-name}} as _core
 import {{_module}}.data._base as _base
-import {{_module}}.model._dataset as _model
-from quartz.error import Error
+{{#each nonkeys}}
+{{#if into}}
+from {{../_module}}.data.{{-name into.table}} import *
+{{/if}}
+{{/each}}
+from abc import abstractmethod
 
 
-class {{-pascal}}(_base.{{-pascal}}):
-
-    def __init__(self{{#each nonkeys}}, {{-name-}}=None{{/each}}, id:int=None):
-        _base.{{-pascal}}.__init__(self, {{#-list nonkeys}}{{#if into}}None{{else}}{{-name-}}{{/if}}{{/-list}}, id)
-        _base.Entity.__init__(self)
+class {{-pascal}}(_core.{{-core}}, _base.Entity):
 {{#each foreign}}
-        self.{{-name-}} = {{-name-}}
+
+    class {{-pascal (-name-)}}(_base.Submanager):
+
+        def get(self):
+            return None if (self._.{{name}} is None) else self.api.{{-plural into.table}}.one(self._.{{name}})
+
+        def set(self, x:_base.{{-ref into.table}}):
+            _base.{{-ref into.table}}.valid(x)
+            self._.{{name}} = int(x)
+            self.api.{{-plural this.table}}.set(x)
+{{/each}}
+
+    def __init__(self, {{#-list nonkeys keys}}{{-param}}=None{{/-list}}, api=None):
+        super().__init__({{#-list nonkeys keys}}{{-param}}{{/-list}})
+        self.api = api
+{{#each foreign}}
+        self.{{-field-}} = {{-pascal table}}.{{-pascal (-name-)}}(self)
 {{/each}}
 {{#each foreign}}
 
     @property
-    def {{-name}}(self):
-        return self.{{-field-}}.id if self.{{-field-}} else None
-    @{{-name}}.setter
-    def {{-name}}(self, x):
-        pass
-
-    @property
     def {{-name-}}(self):
         return self.{{-field-}}
-    @{{-name-}}.setter
-    def {{-name-}}(self, x):
-        self.{{-field-}} = _base.{{-pascal into.table}}.valid(x, True, False)
 {{/each}}
 
     def add(self, x):
@@ -33,52 +41,65 @@ class {{-pascal}}(_base.{{-pascal}}):
             return x.{{-plural}}.add(self)
 
     def remove(self):
-        self.data.ds.{{-plural}}.remove(self)
+        self.api.ds.{{-plural}}.remove(self)
         self.id = None
-{{#if links}}
 
-    def link(self, x):
-        return self.data.{{-plural}}.link(self, x)
+    def push(self, x:Fields=None):
+        return self.api.ds.{{-plural}}.set(self if (x is None) else (self, x))
 
-    def unlink(self, x):
-        return self.data.{{-plural}}.unlink(self, x)
+    def pull(self, x:Fields=None):
+        return self.api.ds.{{-plural}}.get(self, x)
 
-{{/if}}
 
 class {{-pascal}}Manager(_base.{{-pascal}}Manager):
 
-    def add(self, x: {{-pascal}}):
-        return self.data.ds.{{-plural}}.add(x)
+    def add(self, x, debug=False):
+        if isinstance(x, {{-pascal}}):
+            x.attach(self.api)
+        return self.api.ds.{{-plural}}.add(x, debug)
 
-    def update(self, x: {{-pascal}}):
-        return self.data.ds.{{-plural}}.update(x)
+    def set(self, x, debug=False):
+        if isinstance(x, {{-pascal}}):
+            x.attach(self.api)
+        return self.api.ds.{{-plural}}.set(x, debug)
 
-    def remove(self, x: _model.{{-pascal}}Ref):
-        return self.data.ds.{{-plural}}.remove(x)
+    def get(self, x:{{-pascal}}, field:Fields=None, debug=False):
+        if isinstance(x, {{-pascal}}):
+            x.attach(self.api)
+            return self.api.ds.{{-plural}}.get(x, field, debug)
 
-    def clear(self):
-        self.data.ds.{{-plural}}.clear()
+    def remove(self, x: {{-pascal}}Ref, debug=False):
+        return self.api.ds.{{-plural}}.remove(x, debug)
 
-    def has(self, x = None) -> bool:
-        return self.data.ds.{{-plural}}.has(x)
-{{#if lookup}}
+    def clear(self, debug=False):
+        self.api.ds.{{-plural}}.clear(debug)
 
-    def fetch(self, x: object, id:int = None) -> {{-pascal}}:
+    def has(self, x=None, debug=False) -> bool:
+        return self.api.ds.{{-plural}}.has(x, debug)
+
+    def ref(self, x=None, order=None, debug=False) -> {{-pascal}}Ref:
+        return self.api.ds.{{-plural}}.ref(x, order, debug)
+
+    def refs(self, x=None, order=None, debug=False) -> list[{{-pascal}}Ref]:
+        return self.api.ds.{{-plural}}.refs(x, order, debug)
+
+    def one(self, x=None, order=None, debug=False) -> {{-pascal}}:
+        return self.api.ds.{{-plural}}.find(x, "full", self._create, True, order, debug)
+
+    def all(self, x=None, order=None, debug=False) -> list[{{-pascal}}]:
+        return self.api.ds.{{-plural}}.find(x, "full", self._create, False, order, debug)
+{{#if _lookup}}
+
+    def fetch(self, x: object, id:int=None, debug=False) -> {{-pascal}}:
         x_ = str(x)
         {{alias}} = self.one(x_)
         if {{alias}} is None:
-            {{alias}} = self.add({{-pascal}}(x_, id))
+            {{alias}} = self._create([ id{{#each nonkeys}}, {{#if _lookup}}x_{{else}}None{{/if}}{{/each}} ])
+            self.add({{alias}}, debug)
         return {{alias}}
 {{/if}}
 
-    def ref(self, x = None) -> _model.{{-pascal}}Ref:
-        return self.data.ds.{{-plural}}.ref(x)
+    @abstractmethod
+    def _create(self, x):
+        return None
 
-    def refs(self, x = None) -> list[_model.{{-pascal}}Ref]:
-        return self.data.ds.{{-plural}}.refs(x)
-
-    def one(self, x = None) -> {{-pascal}}:
-        return self.data.ds.{{-plural}}.one(x)
-
-    def all(self, x = None) -> list[{{-pascal}}]:
-        return self.data.ds.{{-plural}}.all(x)

@@ -9,19 +9,19 @@ book_author:
 
   select_ref_by_pk: |
     @book_author/select_ref
-     WHERE ba.`book_id` = ? AND ba.`author_id` = ?
+     WHERE ba.`book_id`=? AND ba.`author_id`=?
 
   select_all_by_pk: |
     @book_author/select_all
-     WHERE ba.`book_id` = ? AND ba.`author_id` = ?
+     WHERE ba.`book_id`=? AND ba.`author_id`=?
 
   select_ref_by_rank: |
     @book_author/select_ref
-      WHERE ba.`rank` = ?
+      WHERE ba.`rank`=?
 
   select_all_by_rank: |
     @book_author/select_all
-      WHERE ba.`rank` = ?
+      WHERE ba.`rank`=?
 
   replace: |
     REPLACE INTO `book_author`(`book_id`, `author_id`, `rank`)
@@ -29,18 +29,18 @@ book_author:
 
   update: |
     UPDATE `book_author`
-       SET `rank` = ?
-     WHERE `book_id` = ?, `author_id` = ?
+       SET `rank`=?
+     WHERE `book_id`=?, `author_id`=?
 
-  delete: |
+  delete_all: |
     DELETE FROM `book_author`
 
-  delete_id: |
+  delete_pk: |
     DELETE FROM `book_author`
-     WHERE `book_id` = ? AND `author_id` = ?
+     WHERE `book_id`=? AND `author_id`=?
 
   delete_rank: |
     DELETE FROM `book_author`
-     WHERE `rank` = ?
+     WHERE `rank`=?
 
 

@@ -1,61 +1,77 @@
+from ds.model._base import *
+import ds.model.genre as _core
 import ds.data._base as _base
-import ds.model._dataset as _model
-from quartz.error import Error
+from abc import abstractmethod
 
 
-class Genre(_base.Genre):
+class Genre(_core.Genre, _base.Entity):
 
-    def __init__(self, name=None, id:int=None):
-        _base.Genre.__init__(self, name, id)
-        _base.Entity.__init__(self)
+    def __init__(self, name=None, id=None, api=None):
+        super().__init__(name, id)
+        self.api = api
 
     def add(self, x):
         if isinstance(x, _base.Engine):
             return x.genres.add(self)
 
     def remove(self):
-        self.data.ds.genres.remove(self)
+        self.api.ds.genres.remove(self)
         self.id = None
 
-    def link(self, x):
-        return self.data.genres.link(self, x)
+    def push(self, x:Fields=None):
+        return self.api.ds.genres.set(self if (x is None) else (self, x))
 
-    def unlink(self, x):
-        return self.data.genres.unlink(self, x)
+    def pull(self, x:Fields=None):
+        return self.api.ds.genres.get(self, x)
 
 
 class GenreManager(_base.GenreManager):
 
-    def add(self, x: Genre):
-        return self.data.ds.genres.add(x)
+    def add(self, x, debug=False):
+        if isinstance(x, Genre):
+            x.attach(self.api)
+        return self.api.ds.genres.add(x, debug)
 
-    def update(self, x: Genre):
-        return self.data.ds.genres.update(x)
+    def set(self, x, debug=False):
+        if isinstance(x, Genre):
+            x.attach(self.api)
+        return self.api.ds.genres.set(x, debug)
 
-    def remove(self, x: _model.GenreRef):
-        return self.data.ds.genres.remove(x)
+    def get(self, x:Genre, field:Fields=None, debug=False):
+        if isinstance(x, Genre):
+            x.attach(self.api)
+            return self.api.ds.genres.get(x, field, debug)
 
-    def clear(self):
-        self.data.ds.genres.clear()
+    def remove(self, x: GenreRef, debug=False):
+        return self.api.ds.genres.remove(x, debug)
 
-    def has(self, x = None) -> bool:
-        return self.data.ds.genres.has(x)
+    def clear(self, debug=False):
+        self.api.ds.genres.clear(debug)
 
-    def fetch(self, x: object, id:int = None) -> Genre:
+    def has(self, x=None, debug=False) -> bool:
+        return self.api.ds.genres.has(x, debug)
+
+    def ref(self, x=None, order=None, debug=False) -> GenreRef:
+        return self.api.ds.genres.ref(x, order, debug)
+
+    def refs(self, x=None, order=None, debug=False) -> list[GenreRef]:
+        return self.api.ds.genres.refs(x, order, debug)
+
+    def one(self, x=None, order=None, debug=False) -> Genre:
+        return self.api.ds.genres.find(x, "full", self._create, True, order, debug)
+
+    def all(self, x=None, order=None, debug=False) -> list[Genre]:
+        return self.api.ds.genres.find(x, "full", self._create, False, order, debug)
+
+    def fetch(self, x: object, id:int=None, debug=False) -> Genre:
         x_ = str(x)
         g = self.one(x_)
         if g is None:
-            g = self.add(Genre(x_, id))
+            g = self._create([ id, x_ ])
+            self.add(g, debug)
         return g
 
-    def ref(self, x = None) -> _model.GenreRef:
-        return self.data.ds.genres.ref(x)
+    @abstractmethod
+    def _create(self, x):
+        return None
 
-    def refs(self, x = None) -> list[_model.GenreRef]:
-        return self.data.ds.genres.refs(x)
-
-    def one(self, x = None) -> Genre:
-        return self.data.ds.genres.one(x)
-
-    def all(self, x = None) -> list[Genre]:
-        return self.data.ds.genres.all(x)

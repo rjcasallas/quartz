@@ -1,124 +1,105 @@
-from ds.model._dataset import *
-import quartz.gen.sqlite as _sqlite
-from quartz.error import Error
+from ds.core import *
+from ds.model._dataset import Dataset
+from quartz.gen.sqlite import Table
 
 
-class PublisherManager(Dataset.Publishers, _sqlite.Table):
+class PublisherManager(Dataset.Publishers):
 
     def __init__(self, ds, db):
-        Dataset.Publishers.__init__(self, ds)
-        _sqlite.Table.__init__(self, "publisher", db)
+        super().__init__(ds)
+        self._table = Table("publisher", db, PublisherFilter())
 
-    def add(self, x: Publisher):
-        return self._add(x)
-
-    def remove(self, x):
-        return self._remove(x)
-
-    def has(self, x) -> bool:
-        return self.contains(x)
-
-    def clear(self):
-        self.deleteAll()
-
-    def update(self, x: Publisher):
-        Publisher.valid(x)
-        _sqlite.Table.update(self, [ x.parent_id, x.name, x.id ])
+    def add(self, x, debug=False):
+        if isinstance(x, Publisher) and (x.id is None):
+            x.id = self._table.insert(x, debug)
+        else:
+            self._table.insert(x, debug)
         return x
 
-    def ref(self, x = None) -> PublisherRef:
-        return self.selectRef(x)
+    def set(self, x, debug=False):
+        # Fields
+        if isinstance(x, tuple) and isinstance(x[0], Publisher) and isinstance(x[1], Fields):
+            o, f = x
+            if f == Fields.Parent:
+                x = Table.Update("publisher", [ "parent_id", "id" ], [ o.parent_id, o.id ], 1)
+            if f == Fields.Name:
+                x = Table.Update("publisher", [ "name", "id" ], [ o.name, o.id ], 1)
+        return self._table.update(x, debug)
 
-    def one(self, x = None) -> Publisher:
-        return self.selectOne(x)
+    def get(self, x:Publisher, field:Fields=None, debug=False):
+        if field is None:
+            row = self._table.select(Table.Select("publisher", [ "parent_id", "name", "id" ], [ x.id ], 1), one=True, debug=debug)
+            x.parent_id = row[0]
+            x.name = row[1]
+        elif field == Fields.Parent:
+            x.parent_id = self._table.select(Table.Select("publisher", [ "parent", "id" ], [ x.id ], 1), one=True, debug=debug)[0]
+        elif field == Fields.Name:
+            x.name = self._table.select(Table.Select("publisher", [ "name", "id" ], [ x.id ], 1), one=True, debug=debug)[0]
+    def remove(self, x, debug=False):
+        return self._table.delete(x, debug)
 
-    def refs(self, x = None) -> list[PublisherRef]:
-        return self.selectRefs(x)
+    def has(self, x, debug=False) -> bool:
+        return self._table.contains(x, debug)
 
-    def all(self, x = None) -> list[Publisher]:
-        return self.selectAll(x)
+    def clear(self, debug=False):
+        self._table.deleteAll(debug)
+
+    def find(self, x=None, tag:str="all", builder=None, one=False, order=None, debug=False) -> list[object]:
+        return self._table.select(x, tag, builder, one, order, debug)
+
+    def ref(self, x=None, order=None, debug=False) -> PublisherRef:
+        return self._table.select(x, "ref", self._reference, True, order, debug)
+
+    def refs(self, x=None, order=None, debug=False) -> list[PublisherRef]:
+        return self._table.select(x, "ref", self._reference, False, order, debug)
+
+    def one(self, x=None, order=None, debug=False) -> Publisher:
+        return self._table.select(x, "all", self._create, True, order, debug)
+
+    def all(self, x=None, order=None, debug=False) -> list[Publisher]:
+        return self._table.select(x, "all", self._create, False, order, debug)
 
     def _reference(self, x):
         return PublisherRef(id=x[0])
 
-    def _instance(self, x):
+    def _create(self, x):
         return Publisher(id=x[0], parent_id=x[1], name=x[2])
 
-    def _add(self, x):
+
+class PublisherFilter(Table.Filter):
+
+    def insert(self, x):
         # publisher
         if isinstance(x, Publisher):
-            if x.id is None:
-                x.id = self.insert([ x.parent_id, x.name ], auto=True)
-            else:
-                self.insert([ x.id, x.parent_id, x.name ])
-            return x
-        # "publisher_book" book.publisher_id → publisher.id
-        if isinstance(x, PublisherRef):
-            return self.db.exec("@publisher/replace", [ x.id, x.parent_id, x.name ])
-        # "parent_publisher" publisher.parent_id → publisher.id (self-referencing)
-        if isinstance(x, PublisherRef):
-            return self.db.exec("@publisher/replace", [ x.id, x.parent_id, x.name ])
-        return Error.invalid("publisher", x)
+            return Table.Insert("publisher", False, [ x.id, x.parent_id, x.name ])
 
-    def _remove(self, x):
+    def update(self, x):
         # publisher
-        if isinstance(x, PublisherRef):
-            return self.db.exec("@publisher/delete_pk", [ int(x) ])
-        if isinstance(x, str):
-            return self.db.exec("@publisher/delete_name", [ x ])
-        # "publisher_book" book.publisher_id → publisher.id
-        if isinstance(x, PublisherRef):
-            return self.db.exec("@publisher/delete_pk", [ x.id, x.parent_id, x.name ])
-        # "parent_publisher" publisher.parent_id → publisher.id (self-referencing)
-        if isinstance(x, PublisherRef):
-            return self.db.exec("@publisher/delete_pk", [ x.id, x.parent_id, x.name ])
+        if isinstance(x, Publisher):
+            return Table.Update("publisher", False, [ x.parent_id, x.name, x.id ])
 
-        return self.delete(x)
-
-    def _ref(self, x = None) -> PublisherRef:
-        # "parent_publisher" publisher.parent_id → publisher.id (self-referencing)
+    def delete(self, x):
+        # "parent_publisher" publisher.parent_id → publisher.id (recursive)
         if isinstance(x, ParentPublisherRef):
-            return self.db.one("@publisher/select_ref_by_parent", [ int(x) ])
-        # "publisher_book" book.publisher_id → publisher.id 
-        if isinstance(x, BookRef):
-            return self.db.one("@publisher/select_ref_by_book", [ int(x) ])
+            return Table.Delete("publisher", [ "parent" ], [ int(x) ])
         # pk
         if isinstance(x, int) or isinstance(x, PublisherRef):
-            return self.db.one("@publisher/select_ref_by_pk", [ int(x) ])
+            return Table.Delete("publisher", "pk", [ int(x) ])
         # name
         if isinstance(x, str):
-            return self.db.one("@publisher/select_ref_by_name", [ x ])
-        return super()._ref(x)
+            return Table.Delete("publisher", "name", [ x ])
 
-    def _one(self, x = None) -> Publisher:
-        # "parent_publisher" publisher.parent_id → publisher.id (self-referencing)
+    def select(self, x=None) -> tuple:
+        # "parent_publisher" publisher.parent_id → publisher.id (recursive)
         if isinstance(x, ParentPublisherRef):
-            return self.db.one("@publisher/select_all_by_parent", [ int(x) ])
-        # "publisher_book" book.publisher_id → publisher.id 
-        if isinstance(x, BookRef):
-            return self.db.one("@publisher/select_all_by_book", [ int(x) ])
+            return Table.Select("publisher", "parent", [ int(x) ])
         # pk
         if isinstance(x, int) or isinstance(x, PublisherRef):
-            return self.db.one("@publisher/select_all_by_pk", [ int(x) ])
-        # name
+            return Table.Select("publisher", "pk", [ int(x) ])
+        # name (lookup)
         if isinstance(x, str):
-            return self.db.one("@publisher/select_all_by_name", [ x ])
-        return super()._one(x)
+            return Table.Select("publisher", "name", [ x ])
+        # all
+        if x is None:
+            return Table.Select("publisher")
 
-    def _refs(self, x = None) -> list[PublisherRef]:
-        # "parent_publisher" publisher.parent_id → publisher.id (self-referencing)
-        if isinstance(x, ParentPublisherRef):
-            return self.db.all("@publisher/select_ref_by_parent", [ int(x) ])
-        # "publisher_book" book.publisher_id → publisher.id 
-        if isinstance(x, BookRef):
-            return self.db.all("@publisher/select_ref_by_book", [ int(x) ])
-        return super()._refs(x)
-
-    def _all(self, x = None) -> list[Publisher]:
-        # "parent_publisher" publisher.parent_id → publisher.id (self-referencing)
-        if isinstance(x, ParentPublisherRef):
-            return self.db.all("@publisher/select_all_by_parent", [ int(x) ])
-        # "publisher_book" book.publisher_id → publisher.id 
-        if isinstance(x, BookRef):
-            return self.db.all("@publisher/select_all_by_book", [ int(x) ])
-        return super()._all(x)

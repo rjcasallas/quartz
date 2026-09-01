@@ -2,9 +2,19 @@ from quartz.gen.data import Reference
 from quartz.error import Error
 from quartz.util import Parse
 from quartz.log import Log
+from enum import Enum
 
 #
-# Entities
+# Fields ({{-len fields}})
+#
+
+class Fields(Enum):
+{{#each fields}}
+    {{{-pascal}}} = {{-plus @index}}
+{{/each}}
+
+#
+# Entities ({{-len entities}})
 #
 
 {{#each entities}}
@@ -20,7 +30,7 @@ class {{-pascal}}Ref(Reference):
 
 {{/each}}
 #
-# Junctions
+# Junctions ({{-len junctions}})
 #
 
 {{#each junctions}}
@@ -67,7 +77,7 @@ class {{-pascal}}Ref:
 
 {{/each}}
 #
-# Self-referencing
+# Self-referencing ({{-len recursive}})
 #
 
 {{#each recursive}}

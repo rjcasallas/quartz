@@ -1,76 +1,78 @@
+from ds.model._base import *
+import ds.model.publisher as _core
 import ds.data._base as _base
-import ds.model._dataset as _model
-from quartz.error import Error
+from ds.data.publisher import *
+from abc import abstractmethod
 
 
-class Publisher(_base.Publisher):
+class Publisher(_core.Publisher, _base.Entity):
 
-    def __init__(self, parent=None, name=None, id:int=None):
-        _base.Publisher.__init__(self, None, name, id)
-        _base.Entity.__init__(self)
-        self.parent = parent
-
-    @property
-    def parent_id(self):
-        return self._parent.id if self._parent else None
-    @parent_id.setter
-    def parent_id(self, x):
-        pass
-
-    @property
-    def parent(self):
-        return self._parent
-    @parent.setter
-    def parent(self, x):
-        self._parent = _base.Publisher.valid(x, True, False)
+    def __init__(self, parent_id=None, name=None, id=None, api=None):
+        super().__init__(parent_id, name, id)
+        self.api = api
 
     def add(self, x):
         if isinstance(x, _base.Engine):
             return x.publishers.add(self)
 
     def remove(self):
-        self.data.ds.publishers.remove(self)
+        self.api.ds.publishers.remove(self)
         self.id = None
 
-    def link(self, x):
-        return self.data.publishers.link(self, x)
+    def push(self, x:Fields=None):
+        return self.api.ds.publishers.set(self if (x is None) else (self, x))
 
-    def unlink(self, x):
-        return self.data.publishers.unlink(self, x)
+    def pull(self, x:Fields=None):
+        return self.api.ds.publishers.get(self, x)
 
 
 class PublisherManager(_base.PublisherManager):
 
-    def add(self, x: Publisher):
-        return self.data.ds.publishers.add(x)
+    def add(self, x, debug=False):
+        if isinstance(x, Publisher):
+            x.attach(self.api)
+        return self.api.ds.publishers.add(x, debug)
 
-    def update(self, x: Publisher):
-        return self.data.ds.publishers.update(x)
+    def set(self, x, debug=False):
+        if isinstance(x, Publisher):
+            x.attach(self.api)
+        return self.api.ds.publishers.set(x, debug)
 
-    def remove(self, x: _model.PublisherRef):
-        return self.data.ds.publishers.remove(x)
+    def get(self, x:Publisher, field:Fields=None, debug=False):
+        if isinstance(x, Publisher):
+            x.attach(self.api)
+            return self.api.ds.publishers.get(x, field, debug)
 
-    def clear(self):
-        self.data.ds.publishers.clear()
+    def remove(self, x: PublisherRef, debug=False):
+        return self.api.ds.publishers.remove(x, debug)
 
-    def has(self, x = None) -> bool:
-        return self.data.ds.publishers.has(x)
+    def clear(self, debug=False):
+        self.api.ds.publishers.clear(debug)
 
-    def fetch(self, x: object, id:int = None) -> Publisher:
+    def has(self, x=None, debug=False) -> bool:
+        return self.api.ds.publishers.has(x, debug)
+
+    def ref(self, x=None, order=None, debug=False) -> PublisherRef:
+        return self.api.ds.publishers.ref(x, order, debug)
+
+    def refs(self, x=None, order=None, debug=False) -> list[PublisherRef]:
+        return self.api.ds.publishers.refs(x, order, debug)
+
+    def one(self, x=None, order=None, debug=False) -> Publisher:
+        return self.api.ds.publishers.find(x, "full", self._create, True, order, debug)
+
+    def all(self, x=None, order=None, debug=False) -> list[Publisher]:
+        return self.api.ds.publishers.find(x, "full", self._create, False, order, debug)
+
+    def fetch(self, x: object, id:int=None, debug=False) -> Publisher:
         x_ = str(x)
         p = self.one(x_)
         if p is None:
-            p = self.add(Publisher(x_, id))
+            p = self._create([ id, None, x_ ])
+            self.add(p, debug)
         return p
 
-    def ref(self, x = None) -> _model.PublisherRef:
-        return self.data.ds.publishers.ref(x)
+    @abstractmethod
+    def _create(self, x):
+        return None
 
-    def refs(self, x = None) -> list[_model.PublisherRef]:
-        return self.data.ds.publishers.refs(x)
-
-    def one(self, x = None) -> Publisher:
-        return self.data.ds.publishers.one(x)
-
-    def all(self, x = None) -> list[Publisher]:
-        return self.data.ds.publishers.all(x)

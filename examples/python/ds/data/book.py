@@ -1,76 +1,93 @@
+from ds.model._base import *
+import ds.model.book as _core
 import ds.data._base as _base
-import ds.model._dataset as _model
-from quartz.error import Error
+from ds.data.publisher import *
+from abc import abstractmethod
 
 
-class Book(_base.Book):
+class Book(_core.Book, _base.Entity):
 
-    def __init__(self, publisher=None, title=None, year=None, id:int=None):
-        _base.Book.__init__(self, None, title, year, id)
-        _base.Entity.__init__(self)
-        self.publisher = publisher
+    class Publisher(_base.Submanager):
 
-    @property
-    def publisher_id(self):
-        return self._publisher.id if self._publisher else None
-    @publisher_id.setter
-    def publisher_id(self, x):
-        pass
+        def get(self):
+            return None if (self._.publisher_id is None) else self.api.publishers.one(self._.publisher_id)
+
+        def set(self, x:_base.PublisherRef):
+            _base.PublisherRef.valid(x)
+            self._.publisher_id = int(x)
+            self.api.books.set(x)
+
+    def __init__(self, publisher_id=None, title=None, year=None, id=None, api=None):
+        super().__init__(publisher_id, title, year, id)
+        self.api = api
+        self._publisher = Book.Publisher(self)
 
     @property
     def publisher(self):
         return self._publisher
-    @publisher.setter
-    def publisher(self, x):
-        self._publisher = _base.Publisher.valid(x, True, False)
 
     def add(self, x):
         if isinstance(x, _base.Engine):
             return x.books.add(self)
 
     def remove(self):
-        self.data.ds.books.remove(self)
+        self.api.ds.books.remove(self)
         self.id = None
 
-    def link(self, x):
-        return self.data.books.link(self, x)
+    def push(self, x:Fields=None):
+        return self.api.ds.books.set(self if (x is None) else (self, x))
 
-    def unlink(self, x):
-        return self.data.books.unlink(self, x)
+    def pull(self, x:Fields=None):
+        return self.api.ds.books.get(self, x)
 
 
 class BookManager(_base.BookManager):
 
-    def add(self, x: Book):
-        return self.data.ds.books.add(x)
+    def add(self, x, debug=False):
+        if isinstance(x, Book):
+            x.attach(self.api)
+        return self.api.ds.books.add(x, debug)
 
-    def update(self, x: Book):
-        return self.data.ds.books.update(x)
+    def set(self, x, debug=False):
+        if isinstance(x, Book):
+            x.attach(self.api)
+        return self.api.ds.books.set(x, debug)
 
-    def remove(self, x: _model.BookRef):
-        return self.data.ds.books.remove(x)
+    def get(self, x:Book, field:Fields=None, debug=False):
+        if isinstance(x, Book):
+            x.attach(self.api)
+            return self.api.ds.books.get(x, field, debug)
 
-    def clear(self):
-        self.data.ds.books.clear()
+    def remove(self, x: BookRef, debug=False):
+        return self.api.ds.books.remove(x, debug)
 
-    def has(self, x = None) -> bool:
-        return self.data.ds.books.has(x)
+    def clear(self, debug=False):
+        self.api.ds.books.clear(debug)
 
-    def fetch(self, x: object, id:int = None) -> Book:
+    def has(self, x=None, debug=False) -> bool:
+        return self.api.ds.books.has(x, debug)
+
+    def ref(self, x=None, order=None, debug=False) -> BookRef:
+        return self.api.ds.books.ref(x, order, debug)
+
+    def refs(self, x=None, order=None, debug=False) -> list[BookRef]:
+        return self.api.ds.books.refs(x, order, debug)
+
+    def one(self, x=None, order=None, debug=False) -> Book:
+        return self.api.ds.books.find(x, "full", self._create, True, order, debug)
+
+    def all(self, x=None, order=None, debug=False) -> list[Book]:
+        return self.api.ds.books.find(x, "full", self._create, False, order, debug)
+
+    def fetch(self, x: object, id:int=None, debug=False) -> Book:
         x_ = str(x)
         b = self.one(x_)
         if b is None:
-            b = self.add(Book(x_, id))
+            b = self._create([ id, None, x_, None ])
+            self.add(b, debug)
         return b
 
-    def ref(self, x = None) -> _model.BookRef:
-        return self.data.ds.books.ref(x)
+    @abstractmethod
+    def _create(self, x):
+        return None
 
-    def refs(self, x = None) -> list[_model.BookRef]:
-        return self.data.ds.books.refs(x)
-
-    def one(self, x = None) -> Book:
-        return self.data.ds.books.one(x)
-
-    def all(self, x = None) -> list[Book]:
-        return self.data.ds.books.all(x)

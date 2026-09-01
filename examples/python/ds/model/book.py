@@ -1,5 +1,4 @@
 from ds.model._base import *
-from ds.model.publisher import *
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -16,7 +15,7 @@ class Book(BookRef):
         self.year = year
 
     def __str__(self):
-        return self._title
+        return Parse.string(self._title)
 
     def __repr__(self):
         ref = super().__repr__()

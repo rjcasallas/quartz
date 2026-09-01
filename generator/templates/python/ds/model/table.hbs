@@ -1,12 +1,4 @@
 from {{_module}}.model._base import *
-{{#if parent}}
-from {{_module}}.model.{{-name parent}} import *
-{{/if}}
-{{#each nonkeys}}
-{{#if into}}
-from {{../_module}}.model.{{-name into.table}} import *
-{{/if}}
-{{/each}}
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -15,17 +7,17 @@ from quartz.util import Parse
 # {{#if parent}}Child{{else}}Entity{{/if}}
 #
 
-class {{-pascal}}({{-pascal}}Ref):
+class {{-core}}({{-ref}}):
 
-    def __init__(self{{#each nonkeys}}, {{-param}}=None{{/each}}{{#each keys}}, {{-param}}=None{{/each}}):
-        super().__init__(id)
+    def __init__(self, {{#-list nonkeys keys}}{{-param}}=None{{/-list}}):
+        super().__init__({{#-list keys}}{{-param}}{{/-list}})
 {{#each nonkeys}}
         self.{{-name}} = {{-param}}
 {{/each}}
 {{#if lookup}}
 
     def __str__(self):
-        return self.{{-field _lookup}}
+        return Parse.string(self.{{-field _lookup}})
 {{/if}}
 
     def __repr__(self):
@@ -36,7 +28,7 @@ class {{-pascal}}({{-pascal}}Ref):
         return "{}({{#-list nonkeys}}{{-name}}:{}{{/-list}})".format(ref{{#each nonkeys}}, {{-param}}{{/each}})
 
     def _validRef(self, x):
-        if isinstance(x, {{-pascal}}Ref):
+        if isinstance(x, {{-ref}}):
             return x
 {{#each nonkeys}}
 
@@ -57,7 +49,7 @@ class {{-pascal}}({{-pascal}}Ref):
 # Aggregate
 #
 
-class {{-pascal}}({{-pascal}}Ref):
+class {{-core}}({{-ref}}):
 
     def __init__(self{{#each columns}}, {{-param}}=None{{/each}}):
         super().__init__({{#-list keys}}{{-param}}{{/-list}})
@@ -86,7 +78,7 @@ class {{-pascal}}({{-pascal}}Ref):
 {{/each}}
 
     def copy(self, x):
-        if isinstance(x, {{-pascal}}):
+        if isinstance(x, {{-core}}):
             super().copy(x)
 {{#each nonkeys}}
             self.{{-name}} = x.{{-name}}
@@ -98,6 +90,6 @@ class {{-pascal}}({{-pascal}}Ref):
     def valid(x, nullable = False):
         if nullable and (x is None):
             return None
-        if isinstance(x, {{-pascal}}):
+        if isinstance(x, {{-core}}):
             return x
         Error.invalid("{{-name}}", x)

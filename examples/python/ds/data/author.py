@@ -1,61 +1,77 @@
+from ds.model._base import *
+import ds.model.author as _core
 import ds.data._base as _base
-import ds.model._dataset as _model
-from quartz.error import Error
+from abc import abstractmethod
 
 
-class Author(_base.Author):
+class Author(_core.Author, _base.Entity):
 
-    def __init__(self, name=None, id:int=None):
-        _base.Author.__init__(self, name, id)
-        _base.Entity.__init__(self)
+    def __init__(self, name=None, id=None, api=None):
+        super().__init__(name, id)
+        self.api = api
 
     def add(self, x):
         if isinstance(x, _base.Engine):
             return x.authors.add(self)
 
     def remove(self):
-        self.data.ds.authors.remove(self)
+        self.api.ds.authors.remove(self)
         self.id = None
 
-    def link(self, x):
-        return self.data.authors.link(self, x)
+    def push(self, x:Fields=None):
+        return self.api.ds.authors.set(self if (x is None) else (self, x))
 
-    def unlink(self, x):
-        return self.data.authors.unlink(self, x)
+    def pull(self, x:Fields=None):
+        return self.api.ds.authors.get(self, x)
 
 
 class AuthorManager(_base.AuthorManager):
 
-    def add(self, x: Author):
-        return self.data.ds.authors.add(x)
+    def add(self, x, debug=False):
+        if isinstance(x, Author):
+            x.attach(self.api)
+        return self.api.ds.authors.add(x, debug)
 
-    def update(self, x: Author):
-        return self.data.ds.authors.update(x)
+    def set(self, x, debug=False):
+        if isinstance(x, Author):
+            x.attach(self.api)
+        return self.api.ds.authors.set(x, debug)
 
-    def remove(self, x: _model.AuthorRef):
-        return self.data.ds.authors.remove(x)
+    def get(self, x:Author, field:Fields=None, debug=False):
+        if isinstance(x, Author):
+            x.attach(self.api)
+            return self.api.ds.authors.get(x, field, debug)
 
-    def clear(self):
-        self.data.ds.authors.clear()
+    def remove(self, x: AuthorRef, debug=False):
+        return self.api.ds.authors.remove(x, debug)
 
-    def has(self, x = None) -> bool:
-        return self.data.ds.authors.has(x)
+    def clear(self, debug=False):
+        self.api.ds.authors.clear(debug)
 
-    def fetch(self, x: object, id:int = None) -> Author:
+    def has(self, x=None, debug=False) -> bool:
+        return self.api.ds.authors.has(x, debug)
+
+    def ref(self, x=None, order=None, debug=False) -> AuthorRef:
+        return self.api.ds.authors.ref(x, order, debug)
+
+    def refs(self, x=None, order=None, debug=False) -> list[AuthorRef]:
+        return self.api.ds.authors.refs(x, order, debug)
+
+    def one(self, x=None, order=None, debug=False) -> Author:
+        return self.api.ds.authors.find(x, "full", self._create, True, order, debug)
+
+    def all(self, x=None, order=None, debug=False) -> list[Author]:
+        return self.api.ds.authors.find(x, "full", self._create, False, order, debug)
+
+    def fetch(self, x: object, id:int=None, debug=False) -> Author:
         x_ = str(x)
         a = self.one(x_)
         if a is None:
-            a = self.add(Author(x_, id))
+            a = self._create([ id, x_ ])
+            self.add(a, debug)
         return a
 
-    def ref(self, x = None) -> _model.AuthorRef:
-        return self.data.ds.authors.ref(x)
+    @abstractmethod
+    def _create(self, x):
+        return None
 
-    def refs(self, x = None) -> list[_model.AuthorRef]:
-        return self.data.ds.authors.refs(x)
-
-    def one(self, x = None) -> Author:
-        return self.data.ds.authors.one(x)
-
-    def all(self, x = None) -> list[Author]:
-        return self.data.ds.authors.all(x)

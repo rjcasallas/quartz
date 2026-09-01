@@ -13,7 +13,7 @@ class Author(AuthorRef):
         self.name = name
 
     def __str__(self):
-        return self._name
+        return Parse.string(self._name)
 
     def __repr__(self):
         ref = super().__repr__()

@@ -9,19 +9,19 @@ author:
 
   select_ref_by_pk: |
     @author/select_ref
-     WHERE a.`id` = ?
+     WHERE a.`id`=?
 
   select_all_by_pk: |
     @author/select_all
-     WHERE a.`id` = ?
+     WHERE a.`id`=?
 
   select_ref_by_name: |
     @author/select_ref
-      WHERE a.`name` = ?
+      WHERE a.`name`=?
 
   select_all_by_name: |
     @author/select_all
-      WHERE a.`name` = ?
+      WHERE a.`name`=?
 
   insert: |
     INSERT INTO `author`(`name`)
@@ -33,18 +33,18 @@ author:
 
   update: |
     UPDATE `author`
-       SET `name` = ?
-     WHERE `id` = ?
+       SET `name`=?
+     WHERE `id`=?
 
-  delete: |
+  delete_all: |
     DELETE FROM `author`
 
-  delete_id: |
+  delete_pk: |
     DELETE FROM `author`
-     WHERE `id` = ?
+     WHERE `id`=?
 
   delete_name: |
     DELETE FROM `author`
-     WHERE `name` = ?
+     WHERE `name`=?
 
 

@@ -1,4 +1,17 @@
 book:
+  select_full: |
+    SELECT b.*, p.*
+      FROM `book` b
+     INNER JOIN `publisher` p ON p.`id` = b.`publisher_id`
+
+  select_full_by_pk: |
+    @book/select_full
+     WHERE b.`id` = ?
+
+  select_full_by_title: |
+    @book/select_full
+     WHERE b.`title` = ?
+
   select_ref_by_author: |
     @book/select_ref
       INNER JOIN `book_author` ba
@@ -7,8 +20,8 @@ book:
          ON a.`id` = ba.`author_id`
       WHERE a.`id` = ?
 
-  select_all_by_author: |
-    @book/select_all
+  select_full_by_author: |
+    @book/select_full
       INNER JOIN `book_author` ba
          ON ba.`book_id` = b.`id`
       INNER JOIN `author` a
@@ -23,8 +36,8 @@ book:
          ON g.`id` = bg.`genre_id`
       WHERE g.`id` = ?
 
-  select_all_by_genre: |
-    @book/select_all
+  select_full_by_genre: |
+    @book/select_full
       INNER JOIN `book_genre` bg
          ON bg.`book_id` = b.`id`
       INNER JOIN `genre` g
@@ -35,6 +48,6 @@ book:
     @book/select_ref
       WHERE b.`year` = ?
 
-  select_all_by_year: |
-    @book/select_all
+  select_full_by_year: |
+    @book/select_full
       WHERE b.`year` = ?

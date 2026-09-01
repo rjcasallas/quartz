@@ -1,7 +1,4 @@
-from {{_module}}.model._base import *
-{{#-each entities aggregates}}
-from {{_module}}.model.{{-name}} import *
-{{/-each}}
+from {{_module}}.core import *
 import quartz.gen.data as _base
 from quartz.error import Error
 from quartz.log import Log
@@ -26,29 +23,29 @@ class Manager:
 
 class Dataset:
 
-{{#-each tables}}
+{{#each entities}}
     class {{-ppascal}}(Manager, _base.{{#if nonkeys}}Entity{{else}}Basic{{/if}}Manager):
         pass
 
-{{/-each}}
+{{/each}}
     def __init__(self):
-{{#-each tables}}
+{{#each entities}}
         self._{{-plural}} = None
-{{/-each}}
+{{/each}}
 
-{{#-each tables}}
+{{#each entities}}
     @property
     def {{-plural}}(self) -> {{-ppascal}}:
         if self._{{-plural}} is None: Error.fail(f"Not initialized: {{-plural}}.")
         return self._{{-plural}}
 
-{{/-each}}
+{{/each}}
     def print(self, level = 0):
-{{#-each entities}}
+{{#each entities}}
         # {{-plural}}
         {{-plural}} = self.{{-plural}}.all()
         Log.list("{{-plural}}({})".format(len({{-plural}})), level + 1)
         for {{alias}} in {{-plural}}:
             Log.list(str({{alias}}), level + 2)
 
-{{/-each}}
+{{/each}}

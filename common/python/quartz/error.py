@@ -38,4 +38,4 @@ class Error(Enum):
 
     @staticmethod
     def invalid(what: str, value: Any) -> None:
-        Error.fail(f"Invalid {what} ({type(value)}): {value}")
+        Error.fail(f"Invalid {what} {type(value)}: {value}")

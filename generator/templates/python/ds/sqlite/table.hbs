@@ -1,168 +1,174 @@
-from {{_module}}.model._dataset import *
-import quartz.gen.sqlite as _sqlite
-from quartz.error import Error
+from {{_module}}.core import *
+from {{_module}}.model._dataset import Dataset
+from quartz.gen.sqlite import Table
 
 
-class {{-pascal}}Manager(Dataset.{{-ppascal}}, _sqlite.Table):
+class {{-pascal}}Manager(Dataset.{{-ppascal}}):
 
     def __init__(self, ds, db):
-        Dataset.{{-ppascal}}.__init__(self, ds)
-        _sqlite.Table.__init__(self, "{{name}}", db)
+        super().__init__(ds)
+        self._table = Table("{{name}}", db, {{-pascal}}Filter())
 
-    def add(self, x: {{-pascal}}{{#unless nonkeys}}Ref{{/unless}}):
-        return self._add(x)
-
-    def remove(self, x):
-        return self._remove(x)
-
-    def has(self, x) -> bool:
-        return self.contains(x)
-
-    def clear(self):
-        self.deleteAll()
-{{#if nonkeys}}
-
-    def update(self, x: {{-pascal}}):
-        {{-pascal}}{{#unless nonkeys}}Ref{{/unless}}.valid(x)
-        _sqlite.Table.update(self, [ {{#-list nonkeys}}x.{{-name}}{{/-list}}, {{#-list _keys}}x.{{-name}}{{/-list}} ])
+    def add(self, x, debug=False):
+        if isinstance(x, {{#if nonkeys}}{{-core}}{{else}}{{-ref}}{{/if}}) and (x.id is None):
+            x.id = self._table.insert(x, debug)
+        else:
+            self._table.insert(x, debug)
         return x
 
-    def ref(self, x = None) -> {{-pascal}}Ref:
-        return self.selectRef(x)
+    def set(self, x, debug=False):
+{{#each refs}}
+{{#if into}}
+        # {{{this}}}{{#if is_recursive}} (recursive){{/if}}
+        if isinstance(x, {{-ref into.table}}):
+            if {{#each into.table.keys}}{{#unless @first}} or {{/unless}}(x.{{-name}} is None){{/each}}:
+                return self._table.delete(x, debug)
+{{/if}}
+{{/each}}
+{{#if nonkeys}}
+        # Fields
+        if isinstance(x, tuple) and isinstance(x[0], {{-core}}) and isinstance(x[1], Fields):
+            o, f = x
+{{#each nonkeys}}
+            if f == Fields.{{-pascal short}}:
+                x = Table.Update("{{-name table}}", [ "{{name}}"{{#each table.keys}}, "{{name}}"{{/each}} ], [ o.{{name}}{{#each table.keys}}, o.{{name}}{{/each}} ], {{-len table.keys}})
+{{/each}}
+{{/if}}
+        return self._table.update(x, debug)
 
-    def one(self, x = None) -> {{-pascal}}:
-        return self.selectOne(x)
+{{#if nonkeys}}
+    def get(self, x:{{-core}}, field:Fields=None, debug=False):
+        if field is None:
+            row = self._table.select(Table.Select("{{-name table}}", [ {{#-list nonkeys keys}}"{{name}}"{{/-list}} ], [ {{#-list keys}}x.{{name}}{{/-list}} ], {{-len keys}}), one=True, debug=debug)
+{{#each nonkeys}}
+            x.{{name}} = row[{{@index}}]
+{{/each}}            
+{{#each nonkeys}}
+        elif field == Fields.{{-pascal short}}:
+            x.{{name}} = self._table.select(Table.Select("{{-name table}}", [ "{{short}}"{{#each table.keys}}, "{{name}}"{{/each}} ], [ {{#-list table.keys}}x.{{name}}{{/-list}} ], {{-len table.keys}}), one=True, debug=debug)[0]
+{{/each}}
+{{/if}}
+    def remove(self, x, debug=False):
+        return self._table.delete(x, debug)
 
-    def refs(self, x = None) -> list[{{-pascal}}Ref]:
-        return self.selectRefs(x)
+    def has(self, x, debug=False) -> bool:
+        return self._table.contains(x, debug)
 
-    def all(self, x = None) -> list[{{-pascal}}]:
-        return self.selectAll(x)
+    def clear(self, debug=False):
+        self._table.deleteAll(debug)
+
+    def find(self, x=None, tag:str="all", builder=None, one=False, order=None, debug=False) -> list[object]:
+        return self._table.select(x, tag, builder, one, order, debug)
+{{#if nonkeys}}
+
+    def ref(self, x=None, order=None, debug=False) -> {{-ref}}:
+        return self._table.select(x, "ref", self._reference, True, order, debug)
+
+    def refs(self, x=None, order=None, debug=False) -> list[{{-ref}}]:
+        return self._table.select(x, "ref", self._reference, False, order, debug)
+
+    def one(self, x=None, order=None, debug=False) -> {{-core}}:
+        return self._table.select(x, "all", self._create, True, order, debug)
+
+    def all(self, x=None, order=None, debug=False) -> list[{{-core}}]:
+        return self._table.select(x, "all", self._create, False, order, debug)
 {{/if}}
 
     def _reference(self, x):
-        return {{-pascal}}Ref({{#each keys}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}})
+        return {{-ref}}({{#each keys}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}})
 {{#if nonkeys}}
 
-    def _instance(self, x):
-        return {{-pascal}}({{#each columns}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}})
+    def _create(self, x):
+        return {{-core}}({{#each columns}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}})
 {{/if}}
 
-    def _add(self, x):
+
+class {{-pascal}}Filter(Table.Filter):
+
+    def insert(self, x):
         # {{-name}}
-        if isinstance(x, {{-pascal}}{{#unless nonkeys}}Ref{{/unless}}):
-{{#if auto}}
-            if x.id is None:
-                x.id = self.insert([ {{#-list nonauto}}x.{{-name}}{{/-list}} ], auto=True)
-            else:
-                self.insert([ {{#-list columns}}x.{{-name}}{{/-list}} ])
+        if isinstance(x, {{#if nonkeys}}{{-core}}{{else}}{{-ref}}{{/if}}):
+            return Table.Insert("{{-name}}", {{#if auto}}False{{else}}True{{/if}}, [ {{#-list columns}}x.{{-name}}{{/-list}} ])
+{{#each refs}}
+{{#if into}}
+        # {{{this}}}{{#if is_recursive}} (recursive){{/if}}
+        if isinstance(x, {{-pascal into.table}}Ref):
+            return Table.Insert("{{-name into.table}}", True, [ {{#-list into.table.columns}}x.{{-name}}{{/-list}} ])
+{{/if}}
+{{/each}}
+
+    def update(self, x):
+        # {{-name}}
+        if isinstance(x, {{#if nonkeys}}{{-core}}{{else}}{{-ref}}{{/if}}):
+            return Table.Update("{{-name}}", False, [ {{#-list nonkeys keys}}x.{{-name}}{{/-list}} ])
+{{#each refs}}
+{{#if into}}
+        # {{{this}}}{{#if is_recursive}} (recursive){{/if}}
+        if isinstance(x, {{-pascal into.table}}Ref):
+            return Table.Update("{{-name into.table}}", True, [{{#-list into.table.nonkeys into.table.keys}}x.{{-name}}{{/-list}} ])
+{{/if}}
+{{/each}}
+
+    def delete(self, x):
+{{#each refs}}
+        # {{{this}}}{{#if is_recursive}} (recursive){{/if}}
+{{#if is_recursive}}
+{{#if into}}
+        if isinstance(x, {{-pascal into.table}}Ref):
+            return Table.Delete("{{-name into.table}}", True, [{{#-list into.table.nonkeys into.table.keys}}x.{{-name}}{{/-list}} ])
 {{else}}
-            self.replace([ {{#-list columns}}x.{{-name}}{{/-list}} ])
+        if isinstance(x, {{-pascal name}}Ref):
+            return Table.Delete("{{-name target.table}}", [ "{{key}}" ], [ int(x) ])
 {{/if}}
-            return x
-{{#each links}}
-{{#unless is_recursive}}
-        # {{{this}}}
+{{else}}
         if isinstance(x, {{-pascal into.table}}Ref):
-            return self.db.exec("@{{-name into.table}}/replace", [ {{#-list into.table.columns}}x.{{-name}}{{/-list}} ])
-{{/unless}}
+            return Table.Delete("{{-name into.table}}", [ {{#-list into.table.keys}}"{{-name}}"{{/-list}} ], [ {{#-list into.table.keys}}x.{{-name}}{{/-list}} ])
+{{/if}}
 {{/each}}
-{{#each recursive}}
-        # {{{this}}} (self-referencing)
-        if isinstance(x, {{-pascal into.table}}Ref):
-            return self.db.exec("@{{-name into.table}}/replace", [ {{#-list into.table.columns}}x.{{-name}}{{/-list}} ])
-{{/each}}
-        return Error.invalid("{{-name}}", x)
-
-    def _remove(self, x):
-        # {{-name}}
+        # pk
 {{#if nonkeys}}
 {{#if is_entity}}
-        if isinstance(x, {{-pascal}}Ref):
-            return self.db.exec("@{{name}}/delete_pk", [ int(x) ])
+        if isinstance(x, int) or isinstance(x, {{-ref}}):
+            return Table.Delete("{{name}}", "pk", [ int(x) ])
 {{else}}
-        if isinstance(x, {{-pascal}}Ref):
-            return self.db.exec("@{{name}}/delete_pk", [ {{#-list _keys}}x.{{-name}}{{/-list}} ])
+        if isinstance(x, {{-ref}}):
+            return Table.Delete("{{name}}", "pk", [{{#-list _keys}}x.{{-name}}{{/-list}} ])
 {{/if}}
-{{#if lookup}}
+{{#if _lookup}}
+        # {{_lookup}}
         if isinstance(x, str):
-            return self.db.exec("@{{name}}/delete_{{_lookup}}", [ x ])
+            return Table.Delete("{{name}}", "{{_lookup}}", [ x ])
 {{/if}}
-{{#each links}}
-{{#unless is_recursive}}
-        # {{{this}}}
-        if isinstance(x, {{-pascal into.table}}Ref):
-            return self.db.exec("@{{-name into.table}}/delete_pk", [ {{#-list into.table.columns}}x.{{-name}}{{/-list}} ])
-{{/unless}}
-{{/each}}
-{{#each recursive}}
-        # {{{this}}} (self-referencing)
-        if isinstance(x, {{-pascal into.table}}Ref):
-            return self.db.exec("@{{-name into.table}}/delete_pk", [ {{#-list into.table.columns}}x.{{-name}}{{/-list}} ])
-{{/each}}
-
-        return self.delete(x)
 {{else}}
-        {{-pascal}}Ref.valid(x)
-        return self.delete([ {{#-list _keys}}x.{{-name}}{{/-list}} ])
+        if isinstance(x, {{-ref}}):
+            return Table.Delete("{{-name}}", [ {{#-list keys}}x.{{-name}}{{/-list}} ])
 {{/if}}
 
-    def _ref(self, x = None) -> {{-pascal}}Ref:
+    def select(self, x=None) -> tuple:
 {{#each links}}
-        # {{{this}}} {{#if is_recursive}}(self-referencing){{/if}}
+        # {{{this}}} {{#if is_recursive}}(recursive){{/if}}
         if isinstance(x, {{#if is_recursive}}{{-pascal name}}{{else}}{{-pascal source.table}}{{/if}}Ref):
-            return self.db.one("@{{-name target.table}}/select_ref_by_{{#if is_recursive}}{{key}}{{else}}{{source.table}}{{/if}}", [ int(x) ])
+            return Table.Select("{{-name target.table}}", "{{#if is_recursive}}{{key}}{{else}}{{source.table}}{{/if}}", [ int(x) ])
 {{/each}}
         # pk
 {{#if is_entity}}
-        if isinstance(x, int) or isinstance(x, {{-pascal}}Ref):
-            return self.db.one("@{{name}}/select_ref_by_pk", [ int(x) ])
+        if isinstance(x, int) or isinstance(x, {{-ref}}):
+            return Table.Select("{{name}}", "pk", [ int(x) ])
 {{else}}
-        if isinstance(x, {{-pascal}}Ref):
-            return self.db.one("@{{name}}/select_ref_by_pk", {{#-list keys}}x.{{-name}}{{/-list}})
+        if isinstance(x, {{-core}}):
+            return Table.Select("{{name}}", "pk", [ {{#-list keys}}x.{{-name}}{{/-list}} ])
 {{/if}}
 {{#if lookup}}
-        # {{-name _lookup}}
+        # {{-name _lookup}} (lookup)
         if isinstance(x, str):
-            return self.db.one("@{{name}}/select_ref_by_{{-name _lookup}}", [ x ])
+            return Table.Select("{{name}}", "{{-name _lookup}}", [ x ])
 {{/if}}
-        return super()._ref(x)
-{{#if nonkeys}}
-
-    def _one(self, x = None) -> {{-pascal}}:
-{{#each links}}
-        # {{{this}}} {{#if is_recursive}}(self-referencing){{/if}}
-        if isinstance(x, {{#if is_recursive}}{{-pascal name}}{{else}}{{-pascal source.table}}{{/if}}Ref):
-            return self.db.one("@{{-name target.table}}/select_all_by_{{#if is_recursive}}{{key}}{{else}}{{source.table}}{{/if}}", [ int(x) ])
+{{#each foreign}}
+        # {{{-name into.table}}} (foreign)
+        if isinstance(x, {{-ref into.table}}):
+            return Table.Select("{{-name table}}", "{{-name into.table}}", [ int(x) ])
 {{/each}}
-        # pk
-{{#if is_entity}}
-        if isinstance(x, int) or isinstance(x, {{-pascal}}Ref):
-            return self.db.one("@{{name}}/select_all_by_pk", [ int(x) ])
-{{else}}
-        if isinstance(x, {{-pascal}}):
-            return self.db.one("@{{name}}/select_all_by_pk", {{#-list keys}}x.{{-name}}{{/-list}})
-{{/if}}
-{{#if lookup}}
-        # {{-name _lookup}}
-        if isinstance(x, str):
-            return self.db.one("@{{name}}/select_all_by_{{-name _lookup}}", [ x ])
-{{/if}}
-        return super()._one(x)
+        # all
+        if x is None:
+            return Table.Select("{{-name}}")
 
-    def _refs(self, x = None) -> list[{{-pascal}}Ref]:
-{{#each links}}
-        # {{{this}}} {{#if is_recursive}}(self-referencing){{/if}}
-        if isinstance(x, {{#if is_recursive}}{{-pascal name}}{{else}}{{-pascal source.table}}{{/if}}Ref):
-            return self.db.all("@{{-name target.table}}/select_ref_by_{{#if is_recursive}}{{key}}{{else}}{{source.table}}{{/if}}", [ int(x) ])
-{{/each}}
-        return super()._refs(x)
-
-    def _all(self, x = None) -> list[{{-pascal}}]:
-{{#each links}}
-        # {{{this}}} {{#if is_recursive}}(self-referencing){{/if}}
-        if isinstance(x, {{#if is_recursive}}{{-pascal name}}{{else}}{{-pascal source.table}}{{/if}}Ref):
-            return self.db.all("@{{-name target.table}}/select_all_by_{{#if is_recursive}}{{key}}{{else}}{{source.table}}{{/if}}", [ int(x) ])
-{{/each}}
-        return super()._all(x)
-{{/if}}

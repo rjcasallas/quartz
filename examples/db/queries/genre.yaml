@@ -9,19 +9,19 @@ genre:
 
   select_ref_by_pk: |
     @genre/select_ref
-     WHERE g.`id` = ?
+     WHERE g.`id`=?
 
   select_all_by_pk: |
     @genre/select_all
-     WHERE g.`id` = ?
+     WHERE g.`id`=?
 
   select_ref_by_name: |
     @genre/select_ref
-      WHERE g.`name` = ?
+      WHERE g.`name`=?
 
   select_all_by_name: |
     @genre/select_all
-      WHERE g.`name` = ?
+      WHERE g.`name`=?
 
   insert: |
     INSERT INTO `genre`(`name`)
@@ -33,18 +33,18 @@ genre:
 
   update: |
     UPDATE `genre`
-       SET `name` = ?
-     WHERE `id` = ?
+       SET `name`=?
+     WHERE `id`=?
 
-  delete: |
+  delete_all: |
     DELETE FROM `genre`
 
-  delete_id: |
+  delete_pk: |
     DELETE FROM `genre`
-     WHERE `id` = ?
+     WHERE `id`=?
 
   delete_name: |
     DELETE FROM `genre`
-     WHERE `name` = ?
+     WHERE `name`=?
 
 

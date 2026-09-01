@@ -1,6 +1,6 @@
 import {{_module}}.data._base as _base
 {{#-each entities}}
-from {{_module}}.data.{{-name}} import *
+from {{_module}}.api.{{-name}} import *
 {{/-each}}
 import {{_module}}.sqlite._dataset as _sqlite
 
@@ -10,7 +10,7 @@ import {{_module}}.sqlite._dataset as _sqlite
 
 class Engine(_base.Engine):
 
-    def __init__(self, schema_path:str, file_path:str, reset:bool = False):
+    def __init__(self, schema_path:str, file_path:str, reset:bool=False):
         super().__init__(_sqlite.Dataset(schema_path, file_path))
         # Entities
 {{#-each entities}}

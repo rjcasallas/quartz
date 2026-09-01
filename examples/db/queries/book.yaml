@@ -9,27 +9,27 @@ book:
 
   select_ref_by_pk: |
     @book/select_ref
-     WHERE b.`id` = ?
+     WHERE b.`id`=?
 
   select_all_by_pk: |
     @book/select_all
-     WHERE b.`id` = ?
+     WHERE b.`id`=?
 
   select_ref_by_publisher: |
     @book/select_ref
-      WHERE b.`publisher_id` = ?
+      WHERE b.`publisher_id`=?
 
   select_all_by_publisher: |
     @book/select_all
-      WHERE b.`publisher_id` = ?
+      WHERE b.`publisher_id`=?
 
   select_ref_by_title: |
     @book/select_ref
-      WHERE b.`title` = ?
+      WHERE b.`title`=?
 
   select_all_by_title: |
     @book/select_all
-      WHERE b.`title` = ?
+      WHERE b.`title`=?
 
   insert: |
     INSERT INTO `book`(`publisher_id`, `title`, `year`)
@@ -41,22 +41,22 @@ book:
 
   update: |
     UPDATE `book`
-       SET `publisher_id` = ?, `title` = ?, `year` = ?
-     WHERE `id` = ?
+       SET `publisher_id`=?, `title`=?, `year`=?
+     WHERE `id`=?
 
-  delete: |
+  delete_all: |
     DELETE FROM `book`
 
-  delete_id: |
+  delete_pk: |
     DELETE FROM `book`
-     WHERE `id` = ?
+     WHERE `id`=?
 
   delete_publisher: |
     DELETE FROM `book`
-     WHERE `publisher_id` = ?
+     WHERE `publisher_id`=?
 
   delete_title: |
     DELETE FROM `book`
-     WHERE `title` = ?
+     WHERE `title`=?
 
 

@@ -1,8 +1,8 @@
 import ds.data._base as _base
-from ds.data.author import *
-from ds.data.book import *
-from ds.data.genre import *
-from ds.data.publisher import *
+from ds.api.author import *
+from ds.api.book import *
+from ds.api.genre import *
+from ds.api.publisher import *
 import ds.sqlite._dataset as _sqlite
 
 #
@@ -11,7 +11,7 @@ import ds.sqlite._dataset as _sqlite
 
 class Engine(_base.Engine):
 
-    def __init__(self, schema_path:str, file_path:str, reset:bool = False):
+    def __init__(self, schema_path:str, file_path:str, reset:bool=False):
         super().__init__(_sqlite.Dataset(schema_path, file_path))
         # Entities
         self._authors = AuthorManager(self)

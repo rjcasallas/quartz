@@ -5,17 +5,17 @@ subgenre:
 
   select_ref_by_pk: |
     @subgenre/select_ref
-     WHERE s.`parent_id` = ? AND s.`child_id` = ?
+     WHERE s.`parent_id`=? AND s.`child_id`=?
 
   replace: |
     REPLACE INTO `subgenre`(`parent_id`, `child_id`)
     VALUES (?, ?)
 
-  delete: |
+  delete_all: |
     DELETE FROM `subgenre`
 
-  delete_id: |
+  delete_pk: |
     DELETE FROM `subgenre`
-     WHERE `parent_id` = ? AND `child_id` = ?
+     WHERE `parent_id`=? AND `child_id`=?
 
 

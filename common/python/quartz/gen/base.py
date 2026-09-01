@@ -67,6 +67,12 @@ class Helpers:
     def __and(self, this, a=False, b=False):
         return a and b
 
+    def __eq(self, this, a=False, b=False):
+        return a == b
+
+    def __neq(self, this, a=False, b=False):
+        return a != b
+
     def __name(self, this, text=None):
         return self._name(text or this.context)
 
@@ -92,21 +98,9 @@ class Helpers:
         return self._pascal(self._plural(text or this.context))
 
     def __each(self, this, options, items, items2=None, items3=None):
-        i1 = (
-            (isinstance(items, list) and items)
-            or (isinstance(items, dict) and list(items.values()))
-            or []
-        )
-        i2 = (
-            (isinstance(items2, list) and items2)
-            or (isinstance(items2, dict) and list(items2.values()))
-            or []
-        )
-        i3 = (
-            (isinstance(items3, list) and items3)
-            or (isinstance(items3, dict) and list(items3.values()))
-            or []
-        )
+        i1 = ((isinstance(items, list) and items) or (isinstance(items, dict) and list(items.values())) or [])
+        i2 = ((isinstance(items2, list) and items2) or (isinstance(items2, dict) and list(items2.values())) or [])
+        i3 = ((isinstance(items3, list) and items3) or (isinstance(items3, dict) and list(items3.values())) or [])
         all = sorted(i1 + i2 + i3)
         result = []
         for i in all:
@@ -137,6 +131,8 @@ class Helpers:
         return {
             "-or": self.__or,
             "-and": self.__and,
+            "-eq": self.__eq,
+            "-neq": self.__neq,
             "-name": self.__name,
             "-name-": self.__name_,
             "-field": self.__field,

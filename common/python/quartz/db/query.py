@@ -1,9 +1,9 @@
+from quartz.log import Log
+from quartz.error import Error
 import yaml
 import re
 import os
-from quartz.log import Log
-from quartz.error import Error
-
+import pathlib
 
 # Manages SQL queries loaded from YAML files.
 #
@@ -31,20 +31,21 @@ class Queries:
         del self._queries[key]
 
     # Load queries from a YAML file.
-    def load(self, path: str):
+    def load(self, path):
         if path is None:
             return
-        if os.path.isdir(path):
-            for entry in os.listdir(path):
-                if entry.endswith(".yaml"):
-                    full_path = os.path.join(path, entry)
-                    self.load(full_path)
-        elif os.path.isfile(path):
-            with open(path, "r") as f:
-                data = yaml.load(f, Loader=yaml.FullLoader)
-                self._parse(data)
+        if isinstance(path, str):
+            return self.load(pathlib.Path(path))
+        if isinstance(path, pathlib.Path):
+            if path.is_dir():
+                for entry in sorted(list(path.glob("*.yaml"))):
+                    self.load(entry)
+            elif path.is_file():
+                with open(path, "r") as f:
+                    data = yaml.load(f, Loader=yaml.FullLoader)
+                    self._parse(data)
         else:
-            Error.missing(path)
+            Error.invalid("path", path)
 
     # Parse YAML data into flattened queries with table_name/query_name keys.
     def _parse(self, data: dict):

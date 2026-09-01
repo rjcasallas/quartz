@@ -46,7 +46,7 @@ class Reference:
         return self
 
     def _validRef(self, x):
-        if isinstance(x, Reference):
+        if isinstance(x, Reference) and (x._id is not None):
             return x
 
 
@@ -72,7 +72,7 @@ class BasicManager(ABC):
 class EntityManager(BasicManager):
 
     @abstractmethod
-    def update(self, x: object):
+    def set(self, x: object):
         pass
 
     @abstractmethod

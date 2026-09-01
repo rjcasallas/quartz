@@ -2,9 +2,26 @@ from quartz.gen.data import Reference
 from quartz.error import Error
 from quartz.util import Parse
 from quartz.log import Log
+from enum import Enum
 
 #
-# Entities
+# Fields (10)
+#
+
+class Fields(Enum):
+    Author = 1
+    Book = 2
+    Child = 3
+    Genre = 4
+    Name = 5
+    Parent = 6
+    Publisher = 7
+    Rank = 8
+    Title = 9
+    Year = 10
+
+#
+# Entities (4)
 #
 
 class AuthorRef(Reference):
@@ -48,7 +65,7 @@ class PublisherRef(Reference):
         Error.invalid("publisher reference", x)
 
 #
-# Junctions
+# Junctions (3)
 #
 
 class BookAuthorRef:
@@ -169,7 +186,7 @@ class SubgenreRef:
         Error.invalid("subgenre reference", x)
 
 #
-# Self-referencing
+# Self-referencing (3)
 #
 
 # "child_genre" genre.id → genre.id

@@ -9,27 +9,27 @@ publisher:
 
   select_ref_by_pk: |
     @publisher/select_ref
-     WHERE p.`id` = ?
+     WHERE p.`id`=?
 
   select_all_by_pk: |
     @publisher/select_all
-     WHERE p.`id` = ?
+     WHERE p.`id`=?
 
   select_ref_by_parent: |
     @publisher/select_ref
-      WHERE p.`parent_id` = ?
+      WHERE p.`parent_id`=?
 
   select_all_by_parent: |
     @publisher/select_all
-      WHERE p.`parent_id` = ?
+      WHERE p.`parent_id`=?
 
   select_ref_by_name: |
     @publisher/select_ref
-      WHERE p.`name` = ?
+      WHERE p.`name`=?
 
   select_all_by_name: |
     @publisher/select_all
-      WHERE p.`name` = ?
+      WHERE p.`name`=?
 
   insert: |
     INSERT INTO `publisher`(`parent_id`, `name`)
@@ -41,22 +41,22 @@ publisher:
 
   update: |
     UPDATE `publisher`
-       SET `parent_id` = ?, `name` = ?
-     WHERE `id` = ?
+       SET `parent_id`=?, `name`=?
+     WHERE `id`=?
 
-  delete: |
+  delete_all: |
     DELETE FROM `publisher`
 
-  delete_id: |
+  delete_pk: |
     DELETE FROM `publisher`
-     WHERE `id` = ?
+     WHERE `id`=?
 
   delete_parent: |
     DELETE FROM `publisher`
-     WHERE `parent_id` = ?
+     WHERE `parent_id`=?
 
   delete_name: |
     DELETE FROM `publisher`
-     WHERE `name` = ?
+     WHERE `name`=?
 
 
