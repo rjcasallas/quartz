@@ -906,7 +906,8 @@ class ApiExample(Example):
         if isinstance(x, int) or isinstance(x, Example.Genre):
             self.api.genres.remove(int(x))
         elif isinstance(x, str):
-            self.api.genres.remove(x)
+            gr = self.api.genres.fetch(x)
+            gr.remove()
 
     def _selectGenres(self):
         all = []

@@ -5,10 +5,9 @@ from quartz.log import Log
 
 
 class DatasetFlags(IntFlag):
-    Core    = 1
+    Base    = 1
     Sqlite  = 2
-    Base    = 4
-    API     = 8
+    API     = 4
 
 #
 # Generators
@@ -25,7 +24,7 @@ class PythonDatasetGenerator(DatabaseGenerator):
         for t in meta.tables:
             t._module = module
         # Model
-        if (0 == flags) or (flags & DatasetFlags.Core):
+        if (0 == flags) or (flags & DatasetFlags.Base):
             targets.append(Target("python/ds/model/reference.hbs", "model/_reference.py"))
             targets.append(Target("python/ds/model/dataset.hbs", "model/_dataset.py"))
             for t in meta.entities:
@@ -36,11 +35,9 @@ class PythonDatasetGenerator(DatabaseGenerator):
             for t in meta.entities:
                 targets.append(Target("python/ds/sqlite/table.hbs", f"sqlite/{t.name}.py", t))
         # API
-        if (0 == flags) or (flags & DatasetFlags.Base):
-            targets.append(Target("python/ds/engine.hbs", "engine.py"))
-            targets.append(Target("python/ds/base/core.hbs", "base/_core.py"))
-            for t in meta.entities:
-                targets.append(Target("python/ds/base/table.hbs", f"base/{t.name}.py", t))
+        if (0 == flags) or (flags & DatasetFlags.API):
+            targets.append(Target("python/ds/api/engine.hbs", "engine.py"))
+            targets.append(Target("python/ds/api/core.hbs", "api/_core.py"))
         if (flags & DatasetFlags.API):
             for t in meta.entities:
                 targets.append(Target("python/ds/api/table.hbs", f"api/{t.name}.py", t))

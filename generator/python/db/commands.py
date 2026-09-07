@@ -41,9 +41,8 @@ class PythonDatasetCommand(DatabaseCommand):
     def setup(self) -> None:
         super().setup()
         self.args.dashed.add("module", "m", Types.Path, "ds")
-        self.args.dashed.add("core", "c", Types.Flag)
-        self.args.dashed.add("sqlite", "q", Types.Flag)
         self.args.dashed.add("base", "b", Types.Flag)
+        self.args.dashed.add("sqlite", "q", Types.Flag)
         self.args.dashed.add("api", "a", Types.Flag)
 
     def execute(self):
@@ -52,9 +51,8 @@ class PythonDatasetCommand(DatabaseCommand):
         mod = self.args.string("module")
         out = self.args.string("out") or "examples/python/ds"
         flags = DatasetFlags(0)
-        if self.args.boolean("core"):  flags |= DatasetFlags.Core
-        if self.args.boolean("sqlite"): flags |= DatasetFlags.Sqlite
         if self.args.boolean("base"):   flags |= DatasetFlags.Base
+        if self.args.boolean("sqlite"): flags |= DatasetFlags.Sqlite
         if self.args.boolean("api"):    flags |= DatasetFlags.API
 
         gen = PythonDatasetGenerator(schema)

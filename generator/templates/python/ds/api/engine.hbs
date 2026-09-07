@@ -1,0 +1,20 @@
+import {{_module}}.api._core as _core
+{{#-each entities}}
+from {{_module}}.api.{{-name}} import *
+{{/-each}}
+import quartz.db.sqlite as _sqlite
+
+#
+# Engine
+#
+
+class Engine(_core.Engine):
+
+    def __init__(self, schema_path:str, file_path:str, reset:bool=False):
+        db = _sqlite.Database(schema_path, file_path)
+        db.open(reset)
+        # Entities
+{{#-each entities}}
+        self._{{-plural}} = {{-pascal}}Manager(db, self)
+{{/-each}}
+

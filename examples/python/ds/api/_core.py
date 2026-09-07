@@ -1,4 +1,5 @@
-import ds.model._dataset as _model
+import ds.sqlite._dataset as _dataset
+import quartz.db.sqlite as _sqlite
 import quartz.gen.data as _data
 from quartz.error import Error
 from quartz.log import Log
@@ -61,17 +62,29 @@ class Manager(_data.EntitySubset):
     def api(self):
         return self._
 
-class AuthorManager(Manager):
-    pass
+class AuthorManager(_dataset.AuthorSubset, Manager):
 
-class BookManager(Manager):
-    pass
+    def __init__(self, db, api):
+        super().__init__(db)
+        self._ = api
 
-class GenreManager(Manager):
-    pass
+class BookManager(_dataset.BookSubset, Manager):
 
-class PublisherManager(Manager):
-    pass
+    def __init__(self, db, api):
+        super().__init__(db)
+        self._ = api
+
+class GenreManager(_dataset.GenreSubset, Manager):
+
+    def __init__(self, db, api):
+        super().__init__(db)
+        self._ = api
+
+class PublisherManager(_dataset.PublisherSubset, Manager):
+
+    def __init__(self, db, api):
+        super().__init__(db)
+        self._ = api
 
 #
 # Engine
@@ -79,18 +92,11 @@ class PublisherManager(Manager):
 
 class Engine:
 
-    def __init__(self, x):
-        if isinstance(x, _model.Dataset):
-            self._ds = x
-        else: Error.invalid("dataset")
+    def __init__(self):
         self._authors = None
         self._books = None
         self._genres = None
         self._publishers = None
-
-    @property
-    def ds(self):
-        return self._ds
 
     @property
     def authors(self) -> AuthorManager:

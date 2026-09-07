@@ -1,15 +1,62 @@
-import {{_module}}.base.{{name}} as _base
-from {{_module}}.base._core import Submanager
+import {{_module}}.api._core as _core
+import {{_module}}.model.{{name}} as _model
 from {{_module}}.model._reference import *
+from abc import abstractmethod
 
 
-class {{-pascal}}(_base.{{-pascal}}):
+class {{-pascal}}(_model.{{-core}}, _core.Entity):
+{{#each foreign}}
+
+    class {{-pascal (-name-)}}(_core.Submanager):
+
+        def get(self):
+            return None if (self._.{{name}} is None) else self.api.{{-plural into.table}}.one(self._.{{name}})
+
+        def set(self, x:_core.{{-ref into.table}}):
+            _core.{{-ref into.table}}.valid(x)
+            self._.{{name}} = int(x)
+            self.api.{{-plural this.table}}.set(x)
+{{/each}}
 
     def __init__(self, {{#-list nonkeys keys}}{{-param}}=None{{/-list}}, api=None):
-        super().__init__({{#-list nonkeys keys}}{{-param}}{{/-list}}, api)
+        super().__init__({{#-list nonkeys keys}}{{-param}}{{/-list}})
+        self.api = api
+{{#each foreign}}
+        self.{{-field-}} = {{-pascal table}}.{{-pascal (-name-)}}(self)
+{{/each}}
+{{#each foreign}}
+
+    @property
+    def {{-name-}}(self):
+        return self.{{-field-}}
+{{/each}}
+
+    def add(self, x):
+        if isinstance(x, _core.Engine):
+            return x.{{-plural}}.add(self)
+
+    def remove(self):
+        self.api.{{-plural}}.remove(self)
+        self.id = None
+
+    def push(self, x:Fields=None):
+        return self.api.{{-plural}}.set(self if (x is None) else (self, x))
+
+    def pull(self, x:Fields=None):
+        return self.api.{{-plural}}.get(self, x)
 
 
-class {{-pascal}}Manager(_base.{{-pascal}}Manager):
+class {{-pascal}}Manager(_core.{{-pascal}}Manager):
+{{#if _lookup}}
+
+    def fetch(self, x: object, id:int=None, debug=False) -> {{-pascal}}:
+        x_ = str(x)
+        {{alias}} = self.one(x_)
+        if {{alias}} is None:
+            {{alias}} = {{-pascal}}(id=id, {{_lookup.name}}=x_, api=self.api)
+            self.add({{alias}}, debug)
+        return {{alias}}
+{{/if}}
 
     def _create(self, x):
-        return {{-pascal}}({{#each columns}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}}).attach(self.api)
+        return {{-pascal}}({{#each columns}}{{-name}}=x[{{@index}}], {{/each}}api=self.api)
