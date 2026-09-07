@@ -38,26 +38,27 @@ class Queries:
             return self.load(pathlib.Path(path))
         if isinstance(path, pathlib.Path):
             if path.is_dir():
-                for entry in sorted(list(path.glob("*.yaml"))):
-                    self.load(entry)
-            elif path.is_file():
-                with open(path, "r") as f:
-                    data = yaml.load(f, Loader=yaml.FullLoader)
-                    self._parse(data)
-        else:
-            Error.invalid("path", path)
+                return self._loadDir(path)
+        Error.invalid("path", path)
 
-    # Parse YAML data into flattened queries with table_name/query_name keys.
-    def _parse(self, data: dict):
-        # First pass: flatten the structure
-        for table, queries in data.items():
-            if isinstance(queries, dict):
-                for query, sql in queries.items():
-                    key = f"{table}/{query}"
-                    if isinstance(sql, str):
-                        self._queries[key] = sql.strip()
-                    else:
-                        self._queries[key] = str(sql).strip()
+    def _loadDir(self, path):
+        for table in sorted(list(path.glob("*"))):
+            if table.is_dir():
+                # Load auto-generated queries
+                for file in sorted(list(table.glob("*.sql"))):
+                    if not file.stem.startswith("+"):
+                        self._loadSql(table, file)
+                # Load manual queries
+                for file in sorted(list(table.glob("+*.sql"))):
+                    self._loadSql(table, file)
+
+    def _loadSql(self, dir, file):
+        table = dir.name
+        query = file.stem[1:] if file.stem.startswith("+") else file.stem
+        sql = file.read_text()
+        key = f"{table}/{query}"
+        # Log.debug(f"{key}")
+        self._queries[key] = sql.strip()
 
     # Resolve @table/query_name references in query text.
     def _compile(self, sql: str, visited: set = None) -> str:
@@ -79,7 +80,7 @@ class Queries:
                 return match.group(0)
 
         # Pattern to match @table/query_name references
-        pattern = r"@([a-zA-Z_][a-zA-Z0-9_]*)/([a-zA-Z_][a-zA-Z0-9_]*)"
+        pattern = r"@([a-zA-Z_][a-zA-Z0-9_]*)/([a-zA-Z0-9_-]*)"
         return re.sub(pattern, _replace, sql)
 
     def print(self, level: int = 0):

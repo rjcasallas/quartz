@@ -1,0 +1,2 @@
+DELETE FROM `{{name}}`
+ WHERE {{#each _keys}}{{#unless @first}} AND {{/unless}}`{{name}}`=?{{/each}}

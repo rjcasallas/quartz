@@ -1,0 +1,2 @@
+@{{name}}/select_all-pk
+ WHERE {{#each _keys}}{{table.alias}}.`{{name}}`=?{{#unless @last}} AND {{/unless}}{{/each}}

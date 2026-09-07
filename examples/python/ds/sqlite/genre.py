@@ -47,20 +47,20 @@ class GenreManager(Dataset.Genres):
     def clear(self, debug=False):
         self._table.deleteAll(debug)
 
-    def find(self, x=None, tag:str="all", builder=None, one=False, order=None, debug=False) -> list[object]:
+    def find(self, x=None, tag:str="full", builder=None, one=False, order=None, debug=False) -> list[object]:
         return self._table.select(x, tag, builder, one, order, debug)
 
     def ref(self, x=None, order=None, debug=False) -> GenreRef:
-        return self._table.select(x, "ref", self._reference, True, order, debug)
+        return self._table.select(x, "pk", self._reference, True, order, debug)
 
     def refs(self, x=None, order=None, debug=False) -> list[GenreRef]:
-        return self._table.select(x, "ref", self._reference, False, order, debug)
+        return self._table.select(x, "pk", self._reference, False, order, debug)
 
     def one(self, x=None, order=None, debug=False) -> Genre:
-        return self._table.select(x, "all", self._create, True, order, debug)
+        return self._table.select(x, "full", self._create, True, order, debug)
 
     def all(self, x=None, order=None, debug=False) -> list[Genre]:
-        return self._table.select(x, "all", self._create, False, order, debug)
+        return self._table.select(x, "full", self._create, False, order, debug)
 
     def _reference(self, x):
         return GenreRef(id=x[0])

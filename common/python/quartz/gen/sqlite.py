@@ -121,11 +121,11 @@ class Table:
     def contains(self, x=None, debug=False) -> bool:
         return (self.select(x, ref=True, one=True, debug=debug) is not None)
 
-    def select(self, x=None, kind:str = "all", builder=None, one=False, order=None, debug=False) -> list[object]:
+    def select(self, x=None, kind:str = "full", builder=None, one=False, order=None, debug=False) -> list[object]:
         info = x if isinstance(x, Table.Select) else self._filter.select(x)
         if not isinstance(info, Table.Select): Error.invalid(f'select "{self.name}"', x)
-        tag = f"_by_{info.tag}" if info.tag else ""
-        query = f"@{info.table}/select_{kind}{tag}"
+        tag = info.tag if info.tag else "all"
+        query = f"@{info.table}/select_{tag}-{kind}"
         tail = f"ORDER BY {order}" if order else ""
         if isinstance(info.tag, list):
             # Custom select (e.g: SELECT `title`, `year` FROM `book` WHERE `id`=?)

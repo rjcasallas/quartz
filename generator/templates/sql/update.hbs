@@ -1,0 +1,3 @@
+UPDATE `{{name}}`
+   SET {{#-list _nonkeys}}`{{name}}`=?{{/-list}}
+ WHERE {{#-list _keys}}`{{name}}`=?{{/-list}}

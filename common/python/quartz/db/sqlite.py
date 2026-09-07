@@ -75,7 +75,6 @@ class Database:
             for r in rows:
                 Log.list(str(r), 2)
 
-
     def sql(self, query, append=None):
         if query.startswith("@"):
             name = query[1:]
@@ -188,11 +187,7 @@ class Database:
         if path.is_file():
             self._queries.load(path)
         # Try schema/queries/*.yaml
-        queries = path.parent / "queries"
-        if queries.is_dir():
-            self._queries.load(queries)
-        # Try schema/queries+/*.yaml
-        queries = path.parent / "queries+"
+        queries = path.parent / "sql"
         if queries.is_dir():
             self._queries.load(queries)
 

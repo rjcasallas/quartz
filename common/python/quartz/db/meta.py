@@ -439,8 +439,8 @@ class Table:
             col.print(level + 1)
         for l in self.links:
             Log.list(repr(l), level + 1, "⦿")
-        for l in self.references:
-            Log.list(repr(l), level + 1, "○")
+        # for l in self.references:
+        #     Log.list(repr(l), level + 1, "○")
         if self.lookup:
             Log.list(f"lookup: {self.lookup.name}", level + 1, "◇")
         # Log.debug(f"Keys: {[col.name for col in self.keys]}")

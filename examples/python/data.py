@@ -802,7 +802,7 @@ class CoreExample(Example):
         if x is None:
             rows = self.ds.books.refs(order=order_by)
         elif isinstance(x, Example.Publisher):
-            rows = self.ds.books.refs(PublisherRef(x.id), order=order_by)
+            rows = self.ds.books.refs(PublisherRef(x.id), order=order_by, debug=True)
         elif isinstance(x, Example.Genre):
             rows = self.ds.books.refs(GenreRef(x.id), order=order_by)
         elif isinstance(x, Example.Author):
