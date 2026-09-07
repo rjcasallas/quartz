@@ -1,4 +1,4 @@
-from ds.model._base import *
+from ds.model._reference import *
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -24,9 +24,9 @@ class Book(BookRef):
         year = Parse.string(self._year)
         return "{}(publisher_id:{}, title:{}, year:{})".format(ref, publisher_id, title, year)
 
-    def _validRef(self, x):
-        if isinstance(x, BookRef):
-            return x
+    def _validateRef(self, x):
+        if isinstance(x, int) or isinstance(x, BookRef):
+            return int(x)   
 
     @property
     def publisher_id(self):
@@ -49,10 +49,10 @@ class Book(BookRef):
     def year(self, x):
         self._year = x
 
-    @staticmethod
-    def valid(x, nullable = False):
-        if nullable and (x is None):
-            return None
+    def copy(self, x):
         if isinstance(x, Book):
-            return x
-        Error.invalid("book", x)
+            super().copy(x)
+            self.publisher_id = x.publisher_id
+            self.title = x.title
+            self.year = x.year
+        return self

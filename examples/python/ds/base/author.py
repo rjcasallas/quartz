@@ -1,17 +1,17 @@
-from ds.model._base import *
-import ds.model.author as _core
-import ds.data._base as _base
+import ds.base._core as _core
+import ds.model.author as _model
+from ds.model._reference import *
 from abc import abstractmethod
 
 
-class Author(_core.Author, _base.Entity):
+class Author(_model.Author, _core.Entity):
 
     def __init__(self, name=None, id=None, api=None):
         super().__init__(name, id)
         self.api = api
 
     def add(self, x):
-        if isinstance(x, _base.Engine):
+        if isinstance(x, _core.Engine):
             return x.authors.add(self)
 
     def remove(self):
@@ -25,22 +25,16 @@ class Author(_core.Author, _base.Entity):
         return self.api.ds.authors.get(self, x)
 
 
-class AuthorManager(_base.AuthorManager):
+class AuthorManager(_core.AuthorManager):
 
     def add(self, x, debug=False):
-        if isinstance(x, Author):
-            x.attach(self.api)
         return self.api.ds.authors.add(x, debug)
 
     def set(self, x, debug=False):
-        if isinstance(x, Author):
-            x.attach(self.api)
         return self.api.ds.authors.set(x, debug)
 
     def get(self, x:Author, field:Fields=None, debug=False):
-        if isinstance(x, Author):
-            x.attach(self.api)
-            return self.api.ds.authors.get(x, field, debug)
+        return self.api.ds.authors.get(x, field, debug)
 
     def remove(self, x: AuthorRef, debug=False):
         return self.api.ds.authors.remove(x, debug)

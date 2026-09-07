@@ -1,6 +1,6 @@
-import ds.core as _core
-import ds.data.book as _base
-from ds.data._base import Submanager
+import ds.base.book as _base
+from ds.base._core import Submanager
+from ds.model._reference import *
 
 
 class Book(_base.Book):
@@ -18,24 +18,24 @@ class Book(_base.Book):
     class Genres(Submanager):
 
         def add(self, x, rank=1):
-            return self.api.books.add(_core.BookGenreRef(self._, int(x)))
+            return self.api.books.add(BookGenreRef(self._, int(x)))
 
         def remove(self, x):
-            return self.api.books.remove(_core.BookGenreRef(self._, int(x)))
+            return self.api.books.remove(BookGenreRef(self._, int(x)))
 
         def all(self):
-            return self.api.authors.all(_core.BookRef(self._))
+            return self.api.authors.all(BookRef(self._))
 
     class Authors(Submanager):
 
         def add(self, x, rank=1):
-            return self.api.books.add(_core.BookAuthor(self._, int(x), rank))
+            return self.api.books.add(BookAuthor(self._, int(x), rank))
 
         def remove(self, x):
-            return self.api.books.remove(_core.BookAuthorRef(self._, int(x)))
+            return self.api.books.remove(BookAuthorRef(self._, int(x)))
 
         def all(self):
-            return self.api.genres.all(_core.BookRef(self._))
+            return self.api.genres.all(BookRef(self._))
 
     def __init__(self, publisher_id=None, title=None, year=None, id=None, api=None):
         super().__init__(publisher_id, title, year, id, api)

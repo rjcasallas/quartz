@@ -1,6 +1,6 @@
-import ds.core as _core
-import ds.data.genre as _base
-from ds.data._base import Submanager
+import ds.base.genre as _base
+from ds.base._core import Submanager
+from ds.model._reference import *
 
 
 class Genre(_base.Genre):
@@ -8,19 +8,19 @@ class Genre(_base.Genre):
     class Parent(Submanager):
 
         def get(self):
-            return self.api.genres.one(_core.ChildGenreRef(self._))
+            return self.api.genres.one(ChildGenreRef(self._))
 
         def set(self, x):
-            pr = _core.GenreRef.valid(x, nullable=True)
-            self.api.genres.set(_core.SubgenreRef(pr, self._))
+            pr = GenreRef.valid(x, nullable=True)
+            self.api.genres.set(SubgenreRef(pr, self._))
 
     class Children(Submanager):
 
         def add(self, x):
-            return self.api.genres.add(_core.SubgenreRef(self._, int(x)))
+            return self.api.genres.add(SubgenreRef(self._, int(x)))
 
         def all(self):
-            return self.api.genres.all(_core.ParentGenreRef(self._))
+            return self.api.genres.all(ParentGenreRef(self._))
 
     def __init__(self, name=None, id=None, api=None):
         super().__init__(name, id, api)

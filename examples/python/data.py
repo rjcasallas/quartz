@@ -5,11 +5,7 @@ from quartz.app import BasicApp, Types
 from quartz.error import Error
 from quartz.log import Log
 from abc import ABC, abstractmethod
-from ds.model.author import *
-from ds.model.book import *
-from ds.model.book_author import *
-from ds.model.genre import *
-from ds.model.publisher import *
+from ds.model._reference import *
 
 class Example(ABC):
 
@@ -260,31 +256,46 @@ class Example(ABC):
         comedy = self._selectGenre("Funny", True)
         Log.list(f"{comedy} == {self.comedy}", level+2, "★")
         self.check("select genre by name", comedy == self.comedy)
-        Log.list(f"{self.sci_fi}", level+2)
-        for b in self._selectBooks(self.sci_fi):
-            Log.list(f"{b}", level+3)
+
         # Author
         Log.list(f"Author", level+1)
+        # By id
         adams = self._selectAuthor(self.adams.id)
         Log.list(f"{adams} == {self.adams}", level+2, "★")
         self.check("select author by id", adams == self.adams)
+        # By name
         woolf = self._selectAuthor("Virginia Woolf")
         Log.list(f"{woolf} == {self.woolf}", level+2, "★")
         self.check("select author by name", woolf == self.woolf)
-        Log.list(f"{self.orwell}", level+2)
-        for b in self._selectBooks(self.orwell):
-            Log.list(f"{b}", level+3)
+        # By book
+        Log.list(f"{self.c_lang}", level+2)
+        for a in self._selectAuthors(self.c_lang, order_by="rank"):
+            Log.list(f"{a}", level+3)
+
         # Books
         Log.list(f"Books", level+1)
+        # By id
         quixote = self._selectBook(self.quixote.id)
         Log.list(f"{quixote} == {self.quixote}", level+2, "★")
         self.check("select book by id", quixote == self.quixote)
+        # By title
         dune = self._selectBook("Dune")
         Log.list(f"{dune} == {self.dune}", level+2, "★")
         self.check("select book by name", dune == self.dune)
-        Log.list(f"{self.c_lang}", level+2)
-        for b in self._selectAuthors(self.c_lang, order_by="rank"):
+        # By author
+        Log.list(f"{self.orwell}", level+2)
+        for b in self._selectBooks(self.orwell):
             Log.list(f"{b}", level+3)
+        # By genre
+        Log.list(f"{self.sci_fi}", level+2)
+        for b in self._selectBooks(self.sci_fi):
+            Log.list(f"{b}", level+3)
+        # By year
+        Log.list(f"[1940, 1980]", level+2, "★")
+        books = self._selectBooks(YearRef(1940, 1980))
+        for b in books:
+            Log.list(f"{b}", level+3)
+        # self.check("select book by year", dune == self.dune)
 
     def delete(self):
         # Publisher
@@ -617,6 +628,8 @@ class RawExample(Example):
             rows = self.db.all(f"SELECT `id` FROM `book` b INNER JOIN `book_genre` bg ON bg.`book_id`=b.`id` WHERE bg.`genre_id`=? {order}", [ x.id ])
         elif isinstance(x, Example.Author):
             rows = self.db.all(f"SELECT `id` FROM `book` b INNER JOIN `book_author` ba ON ba.`book_id`=b.`id` WHERE ba.`author_id`=? {order}", [ x.id ])
+        elif isinstance(x, YearRef):
+            rows = self.db.all(f"SELECT `id` FROM `book` b WHERE b.`year` >= ? AND b.`year` <= ? {order}", [ x.start, x.end ])
         else:
             Error.invalid(f"book ref", x)
         for r in rows:
@@ -644,10 +657,10 @@ class RawExample(Example):
         return book
 
 
-class CoreExample(Example):
+class DatasetExample(Example):
 
     def __init__(self, schema, path, reset):
-        super().__init__("CORE")
+        super().__init__("DATASET")
         self.ds = _ds.Dataset(schema, path)
         self.ds.open(reset)
 
@@ -743,7 +756,7 @@ class CoreExample(Example):
         elif isinstance(x, Example.Book):
             rows = self.ds.authors.find(BookRef(x.id), tag="full", order=order_by)
         else:
-            Error.invalid(f"book ref", x)
+            Error.invalid(f"author ref", x)
         for r in rows:
             all.append(Example.Author(id=r[0], name=r[1], rank=r[2]))
         return all
@@ -807,6 +820,8 @@ class CoreExample(Example):
             rows = self.ds.books.refs(GenreRef(x.id), order=order_by)
         elif isinstance(x, Example.Author):
             rows = self.ds.books.refs(AuthorRef(x.id), order=order_by)
+        elif isinstance(x, YearRef):
+            rows = self.ds.books.refs(x, order=order_by)
         else:
             Error.invalid(f"book ref", x)
         for r in rows:
@@ -884,7 +899,7 @@ class ApiExample(Example):
             pd.children.add(g.id)
 
     def _updateGenre(self, g):
-        gd = self.api.genres.set(_api.Genre(id=g.id, name=g.name) )
+        gd = self.api.genres.set(_api.Genre(id=g.id, name=g.name, api=self.api) )
         gd.parent.set(g.parent.id if g.parent else None)
 
     def _deleteGenre(self, x):
@@ -934,7 +949,7 @@ class ApiExample(Example):
         elif isinstance(x, Example.Book):
             rows = self.api.authors.all(BookRef(x.id), order=order_by)
         else:
-            Error.invalid(f"book ref", x)
+            Error.invalid(f"author ref", x)
         for a in rows:
             all.append(Example.Author(id=a.id, name=a.name, rank=a.rank))
         return all
@@ -949,7 +964,7 @@ class ApiExample(Example):
 
     def _insertBook(self, b:Example.Book):
         p = self.api.publishers.one(b.publisher.id)
-        bd = _api.Book(p, b.title, b.year).add(self.api)
+        bd = _api.Book(p, b.title, b.year, api=self.api).add(self.api)
         b.id = int(bd)
         for g in b.genres:
             bd.genres.add(g)
@@ -1004,6 +1019,8 @@ class ApiExample(Example):
             rows = self.api.books.refs(GenreRef(x.id), order=order_by)
         elif isinstance(x, Example.Author):
             rows = self.api.books.refs(AuthorRef(x.id), order=order_by)
+        elif isinstance(x, YearRef):
+            rows = self.api.books.refs(x, order=order_by)
         else:
             Error.invalid(f"book ref", x)
         for r in rows:
@@ -1047,7 +1064,7 @@ class DatasetApp(BasicApp):
         e = RawExample(schema, path, reset)
         e.execute()
         # Core
-        e = CoreExample(schema, path, reset)
+        e = DatasetExample(schema, path, reset)
         e.execute()
         # API
         e = ApiExample(schema, path, reset)

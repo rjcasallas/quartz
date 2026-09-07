@@ -1,12 +1,11 @@
-from {{_module}}.core import *
+from {{_module}}.model.{{name}} import *
 from {{_module}}.model._dataset import Dataset
 from quartz.gen.sqlite import Table
 
 
-class {{-pascal}}Manager(Dataset.{{-ppascal}}):
+class {{-pascal}}Subset(Dataset.{{-ppascal}}):
 
-    def __init__(self, ds, db):
-        super().__init__(ds)
+    def __init__(self, db):
         self._table = Table("{{name}}", db, {{-pascal}}Filter())
 
     def add(self, x, debug=False):

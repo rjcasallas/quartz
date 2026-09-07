@@ -1,6 +1,6 @@
-import ds.core as _core
-import ds.data.author as _base
-from ds.data._base import Submanager
+import ds.base.author as _base
+from ds.base._core import Submanager
+from ds.model._reference import *
 
 
 class Author(_base.Author):

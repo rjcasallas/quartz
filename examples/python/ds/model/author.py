@@ -1,4 +1,4 @@
-from ds.model._base import *
+from ds.model._reference import *
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -20,9 +20,9 @@ class Author(AuthorRef):
         name = Parse.string(self._name)
         return "{}(name:{})".format(ref, name)
 
-    def _validRef(self, x):
-        if isinstance(x, AuthorRef):
-            return x
+    def _validateRef(self, x):
+        if isinstance(x, int) or isinstance(x, AuthorRef):
+            return int(x)   
 
     @property
     def name(self):
@@ -31,10 +31,8 @@ class Author(AuthorRef):
     def name(self, x):
         self._name = x
 
-    @staticmethod
-    def valid(x, nullable = False):
-        if nullable and (x is None):
-            return None
+    def copy(self, x):
         if isinstance(x, Author):
-            return x
-        Error.invalid("author", x)
+            super().copy(x)
+            self.name = x.name
+        return self

@@ -1,21 +1,6 @@
-from {{_module}}.core import *
 import quartz.gen.data as _base
 from quartz.error import Error
 from quartz.log import Log
-
-#
-# Manager
-#
-
-class Manager:
-    def __init__(self, x):
-        if isinstance(x, Dataset):
-            self._ds = x
-        else: Error.invalid("dataset")
-
-    @property
-    def ds(self):
-        return self._ds
 
 #
 # Dataset
@@ -24,7 +9,7 @@ class Manager:
 class Dataset:
 
 {{#each entities}}
-    class {{-ppascal}}(Manager, _base.{{#if nonkeys}}Entity{{else}}Basic{{/if}}Manager):
+    class {{-ppascal}}(_base.{{#if nonkeys}}Entity{{else}}Basic{{/if}}Subset):
         pass
 
 {{/each}}

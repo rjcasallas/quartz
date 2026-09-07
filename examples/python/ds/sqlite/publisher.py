@@ -1,12 +1,11 @@
-from ds.core import *
+from ds.model.publisher import *
 from ds.model._dataset import Dataset
 from quartz.gen.sqlite import Table
 
 
-class PublisherManager(Dataset.Publishers):
+class PublisherSubset(Dataset.Publishers):
 
-    def __init__(self, ds, db):
-        super().__init__(ds)
+    def __init__(self, db):
         self._table = Table("publisher", db, PublisherFilter())
 
     def add(self, x, debug=False):

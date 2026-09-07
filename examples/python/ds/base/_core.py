@@ -1,5 +1,5 @@
-import {{_module}}.model._dataset as _model
-import quartz.gen.data as _base
+import ds.model._dataset as _model
+import quartz.gen.data as _data
 from quartz.error import Error
 from quartz.log import Log
 from abc import ABC, abstractmethod
@@ -52,7 +52,7 @@ class Submanager:
 # Managers
 #
 
-class Manager(_base.EntityManager):
+class Manager(_data.EntitySubset):
 
     def __init__(self, x):
         self._ = Engine.valid(x)
@@ -61,11 +61,18 @@ class Manager(_base.EntityManager):
     def api(self):
         return self._
 
-{{#-each entities}}
-class {{-pascal}}Manager(Manager):
+class AuthorManager(Manager):
     pass
 
-{{/-each}}
+class BookManager(Manager):
+    pass
+
+class GenreManager(Manager):
+    pass
+
+class PublisherManager(Manager):
+    pass
+
 #
 # Engine
 #
@@ -76,21 +83,35 @@ class Engine:
         if isinstance(x, _model.Dataset):
             self._ds = x
         else: Error.invalid("dataset")
-{{#-each entities}}
-        self._{{-plural}} = None
-{{/-each}}
+        self._authors = None
+        self._books = None
+        self._genres = None
+        self._publishers = None
 
     @property
     def ds(self):
         return self._ds
 
-{{#-each entities}}
     @property
-    def {{-plural}}(self) -> {{-pascal}}Manager:
-        if self._{{-plural}}: return self._{{-plural}}
-        Error.missing(f"{{-ppascal}}")
+    def authors(self) -> AuthorManager:
+        if self._authors: return self._authors
+        Error.missing(f"Authors")
 
-{{/-each}}
+    @property
+    def books(self) -> BookManager:
+        if self._books: return self._books
+        Error.missing(f"Books")
+
+    @property
+    def genres(self) -> GenreManager:
+        if self._genres: return self._genres
+        Error.missing(f"Genres")
+
+    @property
+    def publishers(self) -> PublisherManager:
+        if self._publishers: return self._publishers
+        Error.missing(f"Publishers")
+
     def print(self):
         self.ds.print()
 

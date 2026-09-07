@@ -16,8 +16,8 @@ class Fields(Enum):
 #
 # Entities ({{-len entities}})
 #
-
 {{#each entities}}
+
 class {{-pascal}}Ref(Reference):
 
     @staticmethod
@@ -32,8 +32,8 @@ class {{-pascal}}Ref(Reference):
 #
 # Junctions ({{-len junctions}})
 #
-
 {{#each junctions}}
+
 class {{-pascal}}Ref:
 
     def __init__(self{{#each keys}}, {{-param}}{{/each}}):
@@ -75,6 +75,45 @@ class {{-pascal}}Ref:
             return x
         Error.invalid("{{-name}} reference", x)
 
+{{#if aggregate}}
+
+class {{-core}}({{-ref}}):
+
+    def __init__(self{{#each columns}}, {{-param}}=None{{/each}}):
+        super().__init__({{#-list keys}}{{-param}}{{/-list}})
+{{#each nonkeys}}
+        self.{{-name}} = {{-param}}
+{{/each}}
+
+    def __repr__(self):
+        ref = super().__repr__()
+{{#each nonkeys}}
+        {{-param}} = Parse.string(self.{{-field}})
+{{/each}}
+        return "{}({{#-list nonkeys}}{{-name}}:{}{{/-list}})".format(ref{{#each nonkeys}},{{-param}}{{/each}})
+{{#each nonkeys}}
+
+    @property
+    def {{-name}}(self):
+        return self.{{-field}}
+    @{{-name}}.setter
+    def {{-name}}(self, x):
+{{#if into}}
+        self.{{-field}} = {{-ref into}}.valid(x, True)
+{{else}}
+        self.{{-field}} = x
+{{/if}}
+{{/each}}
+
+    def copy(self, x):
+        if isinstance(x, {{-core}}):
+            super().copy(x)
+{{#each nonkeys}}
+            self.{{-name}} = x.{{-name}}
+{{/each}}
+        return self
+
+{{/if}}
 {{/each}}
 #
 # Self-referencing ({{-len recursive}})

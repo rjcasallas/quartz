@@ -1,12 +1,11 @@
-from ds.core import *
+from ds.model.genre import *
 from ds.model._dataset import Dataset
 from quartz.gen.sqlite import Table
 
 
-class GenreManager(Dataset.Genres):
+class GenreSubset(Dataset.Genres):
 
-    def __init__(self, ds, db):
-        super().__init__(ds)
+    def __init__(self, db):
         self._table = Table("genre", db, GenreFilter())
 
     def add(self, x, debug=False):

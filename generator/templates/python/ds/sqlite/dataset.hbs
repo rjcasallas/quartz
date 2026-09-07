@@ -14,7 +14,7 @@ class Dataset(_base.Dataset):
         super().__init__()
         self._db = _sqlite.Database(schema_path, file_path)
 {{#each entities}}
-        self._{{-plural}} = {{-pascal}}Manager(self, self._db)
+        self._{{-plural}} = {{-pascal}}Subset(self._db)
 {{/each}}
 
     @property

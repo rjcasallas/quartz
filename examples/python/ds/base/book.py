@@ -1,19 +1,18 @@
-from ds.model._base import *
-import ds.model.book as _core
-import ds.data._base as _base
-from ds.data.publisher import *
+import ds.base._core as _core
+import ds.model.book as _model
+from ds.model._reference import *
 from abc import abstractmethod
 
 
-class Book(_core.Book, _base.Entity):
+class Book(_model.Book, _core.Entity):
 
-    class Publisher(_base.Submanager):
+    class Publisher(_core.Submanager):
 
         def get(self):
             return None if (self._.publisher_id is None) else self.api.publishers.one(self._.publisher_id)
 
-        def set(self, x:_base.PublisherRef):
-            _base.PublisherRef.valid(x)
+        def set(self, x:_core.PublisherRef):
+            _core.PublisherRef.valid(x)
             self._.publisher_id = int(x)
             self.api.books.set(x)
 
@@ -27,7 +26,7 @@ class Book(_core.Book, _base.Entity):
         return self._publisher
 
     def add(self, x):
-        if isinstance(x, _base.Engine):
+        if isinstance(x, _core.Engine):
             return x.books.add(self)
 
     def remove(self):
@@ -41,22 +40,16 @@ class Book(_core.Book, _base.Entity):
         return self.api.ds.books.get(self, x)
 
 
-class BookManager(_base.BookManager):
+class BookManager(_core.BookManager):
 
     def add(self, x, debug=False):
-        if isinstance(x, Book):
-            x.attach(self.api)
         return self.api.ds.books.add(x, debug)
 
     def set(self, x, debug=False):
-        if isinstance(x, Book):
-            x.attach(self.api)
         return self.api.ds.books.set(x, debug)
 
     def get(self, x:Book, field:Fields=None, debug=False):
-        if isinstance(x, Book):
-            x.attach(self.api)
-            return self.api.ds.books.get(x, field, debug)
+        return self.api.ds.books.get(x, field, debug)
 
     def remove(self, x: BookRef, debug=False):
         return self.api.ds.books.remove(x, debug)

@@ -14,10 +14,10 @@ class Dataset(_base.Dataset):
     def __init__(self, schema_path, file_path:str):
         super().__init__()
         self._db = _sqlite.Database(schema_path, file_path)
-        self._authors = AuthorManager(self, self._db)
-        self._books = BookManager(self, self._db)
-        self._genres = GenreManager(self, self._db)
-        self._publishers = PublisherManager(self, self._db)
+        self._authors = AuthorSubset(self._db)
+        self._books = BookSubset(self._db)
+        self._genres = GenreSubset(self._db)
+        self._publishers = PublisherSubset(self._db)
 
     @property
     def path(self):

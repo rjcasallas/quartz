@@ -1,12 +1,11 @@
-from ds.core import *
+from ds.model.book import *
 from ds.model._dataset import Dataset
 from quartz.gen.sqlite import Table
 
 
-class BookManager(Dataset.Books):
+class BookSubset(Dataset.Books):
 
-    def __init__(self, ds, db):
-        super().__init__(ds)
+    def __init__(self, db):
         self._table = Table("book", db, BookFilter())
 
     def add(self, x, debug=False):
@@ -133,6 +132,9 @@ class BookFilter(Table.Filter):
         # publisher (foreign)
         if isinstance(x, PublisherRef):
             return Table.Select("book", "publisher", [ int(x) ])
+        # year (custom)
+        if isinstance(x, YearRef):
+            return Table.Select("book", "year", [ x.start, x.end ])
         # all
         if x is None:
             return Table.Select("book")

@@ -1,12 +1,11 @@
-from ds.core import *
+from ds.model.author import *
 from ds.model._dataset import Dataset
 from quartz.gen.sqlite import Table
 
 
-class AuthorManager(Dataset.Authors):
+class AuthorSubset(Dataset.Authors):
 
-    def __init__(self, ds, db):
-        super().__init__(ds)
+    def __init__(self, db):
         self._table = Table("author", db, AuthorFilter())
 
     def add(self, x, debug=False):

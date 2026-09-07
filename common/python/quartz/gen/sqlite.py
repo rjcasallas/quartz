@@ -1,4 +1,3 @@
-import quartz.gen.data as _base
 from quartz.db.sqlite import Database
 from quartz.log import Log
 from quartz.error import Error

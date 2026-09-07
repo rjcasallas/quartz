@@ -32,9 +32,7 @@ class Reference:
     def id(self, x):
         if x is None:
             self._id = None
-        elif isinstance(x, int):
-            self._id = x
-        elif self._validRef(x):
+        elif self._validateRef(x):
             self._id = int(x)
         else:
             Error.invalid("id", x)
@@ -45,12 +43,14 @@ class Reference:
             self.id = x.id
         return self
 
-    def _validRef(self, x):
+    def _validateRef(self, x):
+        if isinstance(x, int):
+            return x
         if isinstance(x, Reference) and (x._id is not None):
             return x
 
 
-class BasicManager(ABC):
+class BasicSubset(ABC):
 
     @abstractmethod
     def add(self, x: object):
@@ -69,7 +69,7 @@ class BasicManager(ABC):
         pass
 
 
-class EntityManager(BasicManager):
+class EntitySubset(BasicSubset):
 
     @abstractmethod
     def set(self, x: object):

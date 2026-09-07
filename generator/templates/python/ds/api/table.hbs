@@ -1,6 +1,6 @@
-import {{_module}}.core as _core
-import {{_module}}.data.{{-name}} as _base
-from ds.data._base import Submanager
+import {{_module}}.base.{{name}} as _base
+from {{_module}}.base._core import Submanager
+from {{_module}}.model._reference import *
 
 
 class {{-pascal}}(_base.{{-pascal}}):

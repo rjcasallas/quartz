@@ -1,21 +1,6 @@
-from ds.core import *
 import quartz.gen.data as _base
 from quartz.error import Error
 from quartz.log import Log
-
-#
-# Manager
-#
-
-class Manager:
-    def __init__(self, x):
-        if isinstance(x, Dataset):
-            self._ds = x
-        else: Error.invalid("dataset")
-
-    @property
-    def ds(self):
-        return self._ds
 
 #
 # Dataset
@@ -23,16 +8,16 @@ class Manager:
 
 class Dataset:
 
-    class Authors(Manager, _base.EntityManager):
+    class Authors(_base.EntitySubset):
         pass
 
-    class Books(Manager, _base.EntityManager):
+    class Books(_base.EntitySubset):
         pass
 
-    class Genres(Manager, _base.EntityManager):
+    class Genres(_base.EntitySubset):
         pass
 
-    class Publishers(Manager, _base.EntityManager):
+    class Publishers(_base.EntitySubset):
         pass
 
     def __init__(self):

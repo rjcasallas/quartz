@@ -1,18 +1,17 @@
-from ds.model._base import *
-import ds.model.publisher as _core
-import ds.data._base as _base
-from ds.data.publisher import *
+import ds.base._core as _core
+import ds.model.publisher as _model
+from ds.model._reference import *
 from abc import abstractmethod
 
 
-class Publisher(_core.Publisher, _base.Entity):
+class Publisher(_model.Publisher, _core.Entity):
 
     def __init__(self, parent_id=None, name=None, id=None, api=None):
         super().__init__(parent_id, name, id)
         self.api = api
 
     def add(self, x):
-        if isinstance(x, _base.Engine):
+        if isinstance(x, _core.Engine):
             return x.publishers.add(self)
 
     def remove(self):
@@ -26,22 +25,16 @@ class Publisher(_core.Publisher, _base.Entity):
         return self.api.ds.publishers.get(self, x)
 
 
-class PublisherManager(_base.PublisherManager):
+class PublisherManager(_core.PublisherManager):
 
     def add(self, x, debug=False):
-        if isinstance(x, Publisher):
-            x.attach(self.api)
         return self.api.ds.publishers.add(x, debug)
 
     def set(self, x, debug=False):
-        if isinstance(x, Publisher):
-            x.attach(self.api)
         return self.api.ds.publishers.set(x, debug)
 
     def get(self, x:Publisher, field:Fields=None, debug=False):
-        if isinstance(x, Publisher):
-            x.attach(self.api)
-            return self.api.ds.publishers.get(x, field, debug)
+        return self.api.ds.publishers.get(x, field, debug)
 
     def remove(self, x: PublisherRef, debug=False):
         return self.api.ds.publishers.remove(x, debug)

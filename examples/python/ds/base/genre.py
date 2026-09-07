@@ -1,17 +1,17 @@
-from ds.model._base import *
-import ds.model.genre as _core
-import ds.data._base as _base
+import ds.base._core as _core
+import ds.model.genre as _model
+from ds.model._reference import *
 from abc import abstractmethod
 
 
-class Genre(_core.Genre, _base.Entity):
+class Genre(_model.Genre, _core.Entity):
 
     def __init__(self, name=None, id=None, api=None):
         super().__init__(name, id)
         self.api = api
 
     def add(self, x):
-        if isinstance(x, _base.Engine):
+        if isinstance(x, _core.Engine):
             return x.genres.add(self)
 
     def remove(self):
@@ -25,22 +25,16 @@ class Genre(_core.Genre, _base.Entity):
         return self.api.ds.genres.get(self, x)
 
 
-class GenreManager(_base.GenreManager):
+class GenreManager(_core.GenreManager):
 
     def add(self, x, debug=False):
-        if isinstance(x, Genre):
-            x.attach(self.api)
         return self.api.ds.genres.add(x, debug)
 
     def set(self, x, debug=False):
-        if isinstance(x, Genre):
-            x.attach(self.api)
         return self.api.ds.genres.set(x, debug)
 
     def get(self, x:Genre, field:Fields=None, debug=False):
-        if isinstance(x, Genre):
-            x.attach(self.api)
-            return self.api.ds.genres.get(x, field, debug)
+        return self.api.ds.genres.get(x, field, debug)
 
     def remove(self, x: GenreRef, debug=False):
         return self.api.ds.genres.remove(x, debug)

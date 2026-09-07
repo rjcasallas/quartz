@@ -1,8 +1,7 @@
-from {{_module}}.model._base import *
+from {{_module}}.model._reference import *
 from quartz.error import Error
 from quartz.util import Parse
 
-{{#if is_entity}}
 #
 # {{#if parent}}Child{{else}}Entity{{/if}}
 #
@@ -27,42 +26,9 @@ class {{-core}}({{-ref}}):
 {{/each}}
         return "{}({{#-list nonkeys}}{{-name}}:{}{{/-list}})".format(ref{{#each nonkeys}}, {{-param}}{{/each}})
 
-    def _validRef(self, x):
-        if isinstance(x, {{-ref}}):
-            return x
-{{#each nonkeys}}
-
-    @property
-    def {{-name}}(self):
-        return self.{{-field}}
-    @{{-name}}.setter
-    def {{-name}}(self, x):
-{{#if into}}
-        self.{{-field}} = {{-ref into}}.valid(x, True)
-{{else}}
-        self.{{-field}} = x
-{{/if}}
-{{/each}}
-
-{{else}}
-#
-# Aggregate
-#
-
-class {{-core}}({{-ref}}):
-
-    def __init__(self{{#each columns}}, {{-param}}=None{{/each}}):
-        super().__init__({{#-list keys}}{{-param}}{{/-list}})
-{{#each nonkeys}}
-        self.{{-name}} = {{-param}}
-{{/each}}
-
-    def __repr__(self):
-        ref = super().__repr__()
-{{#each nonkeys}}
-        {{-param}} = Parse.string(self.{{-field}})
-{{/each}}
-        return "{}({{#-list nonkeys}}{{-name}}:{}{{/-list}})".format(ref{{#each nonkeys}},{{-param}}{{/each}})
+    def _validateRef(self, x):
+        if isinstance(x, int) or isinstance(x, {{-ref}}):
+            return int(x)   
 {{#each nonkeys}}
 
     @property
@@ -84,12 +50,3 @@ class {{-core}}({{-ref}}):
             self.{{-name}} = x.{{-name}}
 {{/each}}
         return self
-
-{{/if}}
-    @staticmethod
-    def valid(x, nullable = False):
-        if nullable and (x is None):
-            return None
-        if isinstance(x, {{-core}}):
-            return x
-        Error.invalid("{{-name}}", x)

@@ -34,6 +34,7 @@ class AuthorRef(Reference):
             return int(x)
         Error.invalid("author reference", x)
 
+
 class BookRef(Reference):
 
     @staticmethod
@@ -44,6 +45,7 @@ class BookRef(Reference):
             return int(x)
         Error.invalid("book reference", x)
 
+
 class GenreRef(Reference):
 
     @staticmethod
@@ -53,6 +55,7 @@ class GenreRef(Reference):
         if isinstance(x, int) or isinstance(x, GenreRef):
             return int(x)
         Error.invalid("genre reference", x)
+
 
 class PublisherRef(Reference):
 
@@ -107,6 +110,32 @@ class BookAuthorRef:
             return x
         Error.invalid("book_author reference", x)
 
+
+class BookAuthor(BookAuthorRef):
+
+    def __init__(self, book_id=None, author_id=None, rank=None):
+        super().__init__(book_id, author_id)
+        self.rank = rank
+
+    def __repr__(self):
+        ref = super().__repr__()
+        rank = Parse.string(self._rank)
+        return "{}(rank:{})".format(ref,rank)
+
+    @property
+    def rank(self):
+        return self._rank
+    @rank.setter
+    def rank(self, x):
+        self._rank = x
+
+    def copy(self, x):
+        if isinstance(x, BookAuthor):
+            super().copy(x)
+            self.rank = x.rank
+        return self
+
+
 class BookGenreRef:
 
     def __init__(self, book_id, genre_id):
@@ -145,6 +174,7 @@ class BookGenreRef:
         if isinstance(x, BookGenreRef):
             return x
         Error.invalid("book_genre reference", x)
+
 
 class SubgenreRef:
 
@@ -200,5 +230,15 @@ class ParentGenreRef(GenreRef):
 # "parent_publisher" publisher.parent_id → publisher.id
 class ParentPublisherRef(PublisherRef):
     pass
+
+#
+# Custom
+#
+
+class YearRef:
+
+    def __init__(self, start:int, end:int):
+        self.start = start
+        self.end = end
 
 

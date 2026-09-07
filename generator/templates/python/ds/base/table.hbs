@@ -1,24 +1,19 @@
-from {{_module}}.model._base import *
-import {{_module}}.model.{{-name}} as _core
-import {{_module}}.data._base as _base
-{{#each nonkeys}}
-{{#if into}}
-from {{../_module}}.data.{{-name into.table}} import *
-{{/if}}
-{{/each}}
+import {{_module}}.base._core as _core
+import {{_module}}.model.{{name}} as _model
+from {{_module}}.model._reference import *
 from abc import abstractmethod
 
 
-class {{-pascal}}(_core.{{-core}}, _base.Entity):
+class {{-pascal}}(_model.{{-core}}, _core.Entity):
 {{#each foreign}}
 
-    class {{-pascal (-name-)}}(_base.Submanager):
+    class {{-pascal (-name-)}}(_core.Submanager):
 
         def get(self):
             return None if (self._.{{name}} is None) else self.api.{{-plural into.table}}.one(self._.{{name}})
 
-        def set(self, x:_base.{{-ref into.table}}):
-            _base.{{-ref into.table}}.valid(x)
+        def set(self, x:_core.{{-ref into.table}}):
+            _core.{{-ref into.table}}.valid(x)
             self._.{{name}} = int(x)
             self.api.{{-plural this.table}}.set(x)
 {{/each}}
@@ -37,7 +32,7 @@ class {{-pascal}}(_core.{{-core}}, _base.Entity):
 {{/each}}
 
     def add(self, x):
-        if isinstance(x, _base.Engine):
+        if isinstance(x, _core.Engine):
             return x.{{-plural}}.add(self)
 
     def remove(self):
@@ -51,22 +46,16 @@ class {{-pascal}}(_core.{{-core}}, _base.Entity):
         return self.api.ds.{{-plural}}.get(self, x)
 
 
-class {{-pascal}}Manager(_base.{{-pascal}}Manager):
+class {{-pascal}}Manager(_core.{{-pascal}}Manager):
 
     def add(self, x, debug=False):
-        if isinstance(x, {{-pascal}}):
-            x.attach(self.api)
         return self.api.ds.{{-plural}}.add(x, debug)
 
     def set(self, x, debug=False):
-        if isinstance(x, {{-pascal}}):
-            x.attach(self.api)
         return self.api.ds.{{-plural}}.set(x, debug)
 
     def get(self, x:{{-pascal}}, field:Fields=None, debug=False):
-        if isinstance(x, {{-pascal}}):
-            x.attach(self.api)
-            return self.api.ds.{{-plural}}.get(x, field, debug)
+        return self.api.ds.{{-plural}}.get(x, field, debug)
 
     def remove(self, x: {{-pascal}}Ref, debug=False):
         return self.api.ds.{{-plural}}.remove(x, debug)

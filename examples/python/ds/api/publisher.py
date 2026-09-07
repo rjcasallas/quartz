@@ -1,6 +1,6 @@
-import ds.core as _core
-import ds.data.publisher as _base
-from ds.data._base import Submanager
+import ds.base.publisher as _base
+from ds.base._core import Submanager
+from ds.model._reference import *
 
 
 class Publisher(_base.Publisher):
@@ -11,8 +11,8 @@ class Publisher(_base.Publisher):
             return self.api.publishers.one(self._.parent_id) if self._.parent_id else None
 
         def set(self, x):
-            self._.parent_id = _core.PublisherRef.valid(x)
-            return self.api.publishers.set((self._, _core.Fields.Parent))
+            self._.parent_id = PublisherRef.valid(x)
+            return self.api.publishers.set((self._, Fields.Parent))
 
     def __init__(self, parent_id=None, name=None, id=None, api=None):
         super().__init__(parent_id, name, id, api)
