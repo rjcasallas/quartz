@@ -1,2 +1,2 @@
-@author/select_all-pk
+@author/select_pk-all
  WHERE a.`id`=?

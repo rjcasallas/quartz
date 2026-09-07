@@ -1,0 +1,87 @@
+/* SQLEditor (MySQL (2))*/
+
+
+DROP TABLE IF EXISTS book_author;
+
+DROP TABLE IF EXISTS author;
+
+DROP TABLE IF EXISTS book_genre;
+
+DROP TABLE IF EXISTS subgenre;
+
+DROP TABLE IF EXISTS genre;
+
+DROP TABLE IF EXISTS book;
+
+DROP TABLE IF EXISTS publisher;
+
+CREATE TABLE author
+(
+id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE ,
+name VARCHAR(255) NOT NULL UNIQUE ,
+PRIMARY KEY (id)
+);
+
+CREATE TABLE book_author
+(
+book_id INTEGER UNSIGNED NOT NULL,
+author_id INTEGER UNSIGNED NOT NULL,
+`rank` INTEGER UNSIGNED NOT NULL DEFAULT 1,
+PRIMARY KEY (book_id,author_id)
+);
+
+CREATE TABLE genre
+(
+id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE ,
+name VARCHAR(255) NOT NULL UNIQUE ,
+PRIMARY KEY (id)
+);
+
+CREATE TABLE book_genre
+(
+book_id INTEGER UNSIGNED NOT NULL,
+genre_id INTEGER UNSIGNED NOT NULL,
+PRIMARY KEY (book_id,genre_id)
+);
+
+CREATE TABLE publisher
+(
+id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE ,
+parent_id INTEGER UNSIGNED,
+name VARCHAR(255) NOT NULL UNIQUE ,
+PRIMARY KEY (id)
+);
+
+CREATE TABLE book
+(
+id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE ,
+publisher_id INTEGER UNSIGNED NOT NULL,
+title VARCHAR(255) NOT NULL UNIQUE ,
+year INTEGER UNSIGNED NOT NULL,
+PRIMARY KEY (id)
+);
+
+CREATE TABLE subgenre
+(
+parent_id INTEGER UNSIGNED NOT NULL,
+child_id INTEGER UNSIGNED NOT NULL,
+PRIMARY KEY (parent_id,child_id)
+);
+
+CREATE UNIQUE INDEX book_rank_idx ON book_author (book_id,`rank`);
+
+ALTER TABLE book_author ADD FOREIGN KEY book_id_idxfk (book_id) REFERENCES book (id) ON DELETE CASCADE;
+
+ALTER TABLE book_author ADD FOREIGN KEY author_id_idxfk (author_id) REFERENCES author (id) ON DELETE CASCADE;
+
+ALTER TABLE book_genre ADD FOREIGN KEY book_id_idxfk_1 (book_id) REFERENCES book (id) ON DELETE CASCADE;
+
+ALTER TABLE book_genre ADD FOREIGN KEY genre_id_idxfk (genre_id) REFERENCES genre (id) ON DELETE CASCADE;
+
+ALTER TABLE publisher ADD FOREIGN KEY parent_id_idxfk (parent_id) REFERENCES publisher (id) ON DELETE CASCADE;
+
+ALTER TABLE book ADD FOREIGN KEY publisher_id_idxfk (publisher_id) REFERENCES publisher (id) ON DELETE CASCADE;
+
+ALTER TABLE subgenre ADD FOREIGN KEY parent_id_idxfk_1 (parent_id) REFERENCES genre (id) ON DELETE CASCADE;
+
+ALTER TABLE subgenre ADD FOREIGN KEY child_id_idxfk (child_id) REFERENCES genre (id) ON DELETE CASCADE;

@@ -1,2 +1,2 @@
-INSERT INTO `genre`(`id`, `name`)
+REPLACE INTO `genre`(`id`, `name`)
 VALUES (?, ?)

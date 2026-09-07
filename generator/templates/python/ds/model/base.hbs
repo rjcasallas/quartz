@@ -1,0 +1,89 @@
+from quartz.data.base import Reference
+from quartz.error import Error
+from quartz.util import Parse
+from quartz.log import Log
+from enum import IntEnum
+
+#
+# Fields
+#
+
+class Fields(IntEnum):
+{{#each fields}}
+    {{{-pascal}}} = {{-plus @index}}
+{{/each}}
+
+#
+# Entities
+#
+{{#each entities}}
+
+class {{-ref}}(Reference):
+
+    @staticmethod
+    def valid(x, nullable = False):
+        if nullable and x is None:
+            return None
+        if isinstance(x, int) or isinstance(x, {{-ref}}):
+            return int(x)
+        Error.invalid("{{-name}} reference", x)
+
+{{/each}}
+#
+# Junctions
+#
+{{#each junctions}}
+
+class {{-ref}}:
+
+    def __init__(self{{#each keys}}, {{-param}}=None{{/each}}):
+{{#each keys}}
+        self.{{-name}} = {{-param}}
+{{/each}}
+
+    def __repr__(self):
+{{#each keys}}
+        {{-param}} = Parse.string(self.{{-field}})
+{{/each}}
+        return "{{-name}}{{#each keys}}⌗{}{{/each}}".format({{#-list keys}}{{-param}}{{/-list}})
+{{#each keys}}
+
+    @property
+    def {{-name}}(self):
+        return self.{{-field}}
+    @{{-name}}.setter
+    def {{-name}}(self, x):
+{{#if into}}
+        self.{{-field}} = {{-ref into}}.valid(x, True)
+{{else}}
+        self.{{-field}} = x
+{{/if}}
+{{/each}}
+
+    def copy(self, x):
+        if isinstance(x, {{-ref}}):
+{{#each keys}}
+            self.{{-name}} = x.{{-name}}
+{{/each}}
+        return self
+
+    @staticmethod
+    def valid(x, nullable = False):
+        if nullable and (x is None):
+            return None
+        if isinstance(x, {{-ref}}):
+            return x
+        Error.invalid("{{-name}} reference", x)
+
+{{/each}}
+#
+# Self-referencing ({{-len recursive}})
+#
+
+{{#each recursive}}
+# {{{this}}}
+class {{-ref_from}}({{-pascal source.table}}Ref):
+    pass
+
+{{/each}}
+

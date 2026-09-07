@@ -1,4 +1,4 @@
-import quartz.gen.data as _base
+import quartz.data.base as _base
 from quartz.error import Error
 from quartz.log import Log
 
@@ -14,6 +14,9 @@ class Dataset:
     class Books(_base.EntitySubset):
         pass
 
+    class BookAuthors(_base.EntitySubset):
+        pass
+
     class Genres(_base.EntitySubset):
         pass
 
@@ -23,6 +26,7 @@ class Dataset:
     def __init__(self):
         self._authors = None
         self._books = None
+        self._book_authors = None
         self._genres = None
         self._publishers = None
 
@@ -35,6 +39,11 @@ class Dataset:
     def books(self) -> Books:
         if self._books is None: Error.fail(f"Not initialized: books.")
         return self._books
+
+    @property
+    def book_authors(self) -> BookAuthors:
+        if self._book_authors is None: Error.fail(f"Not initialized: book_authors.")
+        return self._book_authors
 
     @property
     def genres(self) -> Genres:
@@ -57,6 +66,11 @@ class Dataset:
         Log.list("books({})".format(len(books)), level + 1)
         for b in books:
             Log.list(str(b), level + 2)
+        # book_authors
+        book_authors = self.book_authors.all()
+        Log.list("book_authors({})".format(len(book_authors)), level + 1)
+        for ba in book_authors:
+            Log.list(str(ba), level + 2)
         # genres
         genres = self.genres.all()
         Log.list("genres({})".format(len(genres)), level + 1)

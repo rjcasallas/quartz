@@ -1,154 +1,136 @@
-# MainCommand module.
 from quartz.args import Arguments, Types
 from quartz.log import Log
-from typing import Optional, Dict, List
-from abc import ABC
-import os
-import shlex
-import sys
-import readline
+from quartz.error import Error
+from abc import ABC, abstractmethod
+import sys, os, readline, shlex
 
 
-# Abstract command class with execute method.
 class Command(ABC):
 
-    class Children:
-
-        def __init__(self, _parent: "Command"):
-            if not isinstance(_parent, Command):
-                Error.invalid(f"Invalid parent", _parent)
-            self._parent = _parent
-            self._commands = {}
-            self._aliases = {}
-
-        def __len__(self):
-
-            return len(self._commands)
-
-        def __getitem__(self, name: str) -> "Command":
-            return self._commands[name]
-
-        def __str__(self) -> str:
-            commands = [f"{name}" for name, cmd in self._commands.items()]
-            return ", ".join(commands)
-
-        def clear(self):
-            self._commands = {}
-
-        def add(self, x: str, cmd: "Command") -> None:
-            # command
-            if not isinstance(cmd, Command):
-                Error.invalid(f"Invalid command", cmd)
-            # name/alias
-            if isinstance(x, str):
-                self._commands[x] = cmd
-            elif isinstance(x, (tuple, list)):
-                self._commands[x[0]] = cmd
-                for a in x[1:]:
-                    self._aliases[a] = cmd
-            else:
-                Error.invalid(f"Invalid command name/alias", x)
-            # parent
-            cmd._parent = self._parent
-            cmd.args.parent = self._parent.args
-
-        def get(self, x: str) -> Optional["Command"]:
-            if x in self._commands:
-                return self._commands[x]
-            elif x in self._aliases:
-                return self._aliases[x]
-
-        def has(self, name: str) -> bool:
-            return name in self._commands
-
-        def to_dict(self) -> Dict[str, "Command"]:
-            return self._commands.copy()
-
-    def __init__(self, title: str, hidden: bool = False):
+    def __init__(self, title:str, hidden:bool=False):
         self._title = title
         self._hidden = hidden
         self._parent = None
+        self._children = CommandSet(self)
         self._args = Arguments()
-        self._children = Command.Children(self)
-        self._running = True
+        self._args._tag = title
+        self._needs_init = True
 
-    def __str__(self) -> str:
-        return f"{self._title}({self._children})"
+    @property
+    def title(self) -> str:
+        return self._title
 
     @property
     def hidden(self) -> bool:
         return self._hidden
 
     @property
-    def parent(self) -> "Command":
+    def parent(self) -> Command:
         return self._parent
+    @parent.setter
+    def parent(self, c:Command):
+        if not isinstance(c, Command):
+            Error.invalid("parent command", c)
+        self._parent = c
+        self._args.parent = c._args
 
     @property
-    def commands(self) -> "Command.Children":
+    def commands(self) -> list[Command]:
         return self._children
 
     @property
     def args(self) -> Arguments:
         return self._args
 
-    def run(self, argv: List[str]) -> None:
-        self.clear()
-        self.builtin()
-        self.setup()
-
-        # Check if the first argument matches a child command name
-        if len(argv) > 0:
-            child = self.commands.get(argv[0])
-            if child:
-                # Remove the first argument and execute run in the child command
-                return child.run(argv[1:])
-        # Otherwise parse arguments
-        self.args.parse(argv)
-        # Execute
-        if self.args.boolean("help"):
-            self.help()
-        else:
-            self.execute()
+    def setup(self):
+        pass
 
     def clear(self):
+        self.commands.clear()
         self.args.clear()
-        self._children.clear()
 
-    def builtin(self) -> None:
-        pass
+    def execute(self):
+        self.print()
 
-    def setup(self) -> None:
-        pass
+    def run(self, args:list[str]):
+        # Prepare
+        self._setup()
+        # Check for sub-commands
+        if len(args) > 0:
+            child = self.commands.find(args[0])
+            if child is not None:
+                # Run sub-command
+                return child.run(args[1:])
+        # Parse actual arguments
+        self.args.parse(args)
+        # Execute
+        self._execute()
 
-    def execute(self) -> None:
-        self.print(0)
-
-    def print(self, level: int = 0) -> None:
-        Log.list(f"{self._title}", level, "‣")
-        # Commands
-        self._printCommands(level + 1)
-        # Arguments
-        self.args.print(level + 1)
-
-    def help(self) -> None:
+    def help(self, level:int=0):
         Log.list(f"{self._title}", 0, "﹖")
-        self._help(1)
+        self.commands.print(level + 1)
+        self.args.help(level + 1)
+        exit(0)
 
-    def _printCommands(self, level: int = 0) -> None:
-        # Subcommands
-        children = self.commands.to_dict()
-        for name, cmd in children.items():
+    def print(self, level:int=0):
+        Log.list(f"{self.title}", level, "‣")
+        self.commands.print(level + 1)
+
+    def _setup(self):
+        if self._needs_init:
+            self.clear()
+            self.setup()
+            self._needs_init = False
+
+    def _execute(self):
+        self.execute()
+
+
+class CommandSet:
+
+    def __init__(self, parent):
+        self._parent = parent
+        self._commands = {}
+        self._aliases = {}
+
+        def __len__(self):
+            return len(self._commands)
+
+        def __getitem__(self, alias:str) -> Command:
+            return self.get(alias)
+
+    def add(self, alias:str, cmd:Command):
+        if not isinstance(cmd, Command):
+            Error.invalid("command", cmd)
+        cmd.parent = self._parent
+        if isinstance(alias, str):
+            self._commands[alias] = cmd
+        elif isinstance(alias, (tuple, list)):
+            self._commands[alias[0]] = cmd
+            for a in alias[1:]:
+                self._aliases[a] = cmd
+        else:
+            Error.invalid(f"command alias", alias)
+
+    def get(self, alias:str) -> Command:
+        c = self.find(alias)
+        if c is None:
+            Error.missing(f'command "{alias}"')
+        return c
+
+    def find(self, alias:str) -> Command:
+        if alias in self._commands:
+            return self._commands[alias]
+        elif alias in self._aliases:
+            return self._aliases[alias]
+
+    def clear(self):
+        self._commands = {}
+
+    def print(self, level:int=0):
+        for name, cmd in self._commands.items():
             if not cmd.hidden:
                 Log.list(f"{name}", level, "✱")
-
-    def _help(self, level: int = 0) -> None:
-        # Commands
-        self._printCommands(level)
-        # Arguments
-        self.args.help(level)
-
-    def _exit(self) -> None:
-        self._running = False
 
 
 class HelpCommand(Command):
@@ -160,85 +142,95 @@ class HelpCommand(Command):
 class ExitCommand(Command):
 
     def execute(self):
-        if self.parent:
-            self.parent._exit()
-        else:
-            self._exit()
+        exit(0)
 
 
 class BasicCommand(Command):
 
-    def __init__(self, title: str, hidden: bool = False):
-        super().__init__(title, hidden)
-
-    def builtin(self) -> None:
-        # Build-in
-        self.commands.add(["help", "h"], HelpCommand(self._title, hidden=True))
+    def _setup(self):
+        super()._setup()
+        self.commands.add(["help", "h"], HelpCommand(self.title, hidden=True))
         self.commands.add(["exit", "x"], ExitCommand("Exit", hidden=True))
-        self.args.dashed.add(
-            "help",
-            "h",
-            Types.Flag,
-            False,
-            "Show help",
-            hidden=(self.parent is not None),
-        )
+        self.args.dashed.add("help", "h", Types.Flag, False, hidden=True)
 
-
-class MainCommand(BasicCommand):
-
-    def __init__(self, title: str, version: str):
-        super().__init__(title)
-        self._version = version
-
-    def run(self, argv: List[str] = None) -> None:
-        super().run(sys.argv[1:] if argv is None else argv)
+    def _execute(self):
+        if self.args.boolean("help"):
+            self.help()
+        else:
+            self.execute()
 
     def execute(self):
         Log.list(f"\n{self._title}", 0, "◆")
-
-    def help(self) -> None:
-        self._help(1)
+        self.args.print(1)
 
 
 class VersionCommand(Command):
 
+    def __init__(self, title:str, version:str):
+        super().__init__(title)
+        self._version = version
+
     def execute(self):
-        Log.list(f"Version {self.parent._version}", 1, "‣")
+        Log.list(f"{self.parent.title} v{self._version}", 1, "‣")
+
+
+class MainCommand(BasicCommand):
+
+    def __init__(self, title:str, version:str):
+        super().__init__(title)
+        self._version = version
+
+    def _setup(self):
+        super()._setup()
+        self.commands.add(["version", "v"], VersionCommand("Version", self.version))
+        self.args.dashed.add("version", "v", Types.Flag, False)
+
+    def _execute(self):
+        if self.args.boolean("help"):
+            self.help()
+        elif self.args.boolean("version"):
+            self.commands.get("version").execute()
+        else:
+            self.execute()
+
+    @property
+    def version(self) -> str:
+        return self._version
+
+    def run(self, args:list[str]=None):
+        super().run(sys.argv[1:] if args is None else args)
 
 
 class BasicApp(MainCommand):
 
-    def __init__(self, title: str, version: str):
+    def __init__(self, title, version):
         super().__init__(title, version)
+        self._prompt = ">"
         self._command = self
-        self._prompt = "> "
+        self._interactive = False
 
     @property
     def prompt(self):
         return self._prompt
-
     @prompt.setter
-    def prompt(self, prompt):
-        self._prompt = prompt
+    def prompt(self, p):
+        self._prompt = p.strip()
 
     @property
     def command(self):
         return self._command
-
     @command.setter
-    def command(self, command):
-        self._command = command
-
-    def builtin(self) -> None:
-        super().builtin()
-        self.commands.add(["version", "v"], VersionCommand("Version"))
-        self.args.dashed.add("version", "v", Types.Flag, False, "Show version")
+    def command(self, c):
+        if not isinstance(c, Command):
+            Error.invalid("command", c)
+        self._command = c
 
     def execute(self):
-        super().execute()
-        if self.args["version"].boolean():
-            return self.commands["version"].execute()
+        if self._interactive:
+            # Already interactive
+            return super().execute()
+        else:
+            self._interactive = True
         history_file = os.path.expanduser("~/.quartz/history")
         # Log.list(history_file, 0, '💾')
         try:
@@ -246,15 +238,16 @@ class BasicApp(MainCommand):
             readline.read_history_file(history_file)
         except OSError:
             pass
-        while self._running:
+
+        while True:
             try:
-                line = input(self.prompt).strip()
+                line = input(f"{self.prompt} ").strip()
                 if not line:
                     continue
                 if line in ("quit", "q"):
                     break
-                argv = shlex.split(line)
-                self.command.run(argv)
+                args = shlex.split(line)
+                self.command.run(args) # FIXME: Clears the command-line arguments
             except EOFError:
                 break
             except KeyboardInterrupt:

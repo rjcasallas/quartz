@@ -1,4 +1,4 @@
-from ds.model._reference import *
+from ds.base import *
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -56,3 +56,9 @@ class Book(BookRef):
             self.title = x.title
             self.year = x.year
         return self
+
+    @staticmethod
+    def valid(x):
+        if isinstance(x, Book):
+            return x
+        Error.invalid("Book", x)

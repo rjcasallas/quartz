@@ -1,5 +1,5 @@
-from db.common import DatabaseGenerator
-from quartz.gen.base import Target
+from db.common import Target
+from db.database import DatabaseGenerator
 
 
 class QueriesGenerator(DatabaseGenerator):
@@ -11,22 +11,22 @@ class QueriesGenerator(DatabaseGenerator):
         # Targets
         targets = []
         for table in self._meta.tables:
-            targets.append(Target("sql/select_all-pk.hbs", f"sql/{table._name}/select_all-pk.sql", table))
+            targets.append(Target("sql/select_pk-all.hbs", f"sql/{table._name}/select_pk-all.sql", table))
             targets.append(Target("sql/select_pk-pk.hbs",  f"sql/{table._name}/select_pk-pk.sql", table))
             if table.auto:
                 targets.append(Target("sql/insert_id.hbs",     f"sql/{table._name}/insert_id.sql", table))
             targets.append(Target("sql/replace.hbs",       f"sql/{table._name}/replace.sql", table))
-            targets.append(Target("sql/delete_all.hbs",    f"sql/{table._name}/delete_all.sql", table))
-            targets.append(Target("sql/delete_pk.hbs",     f"sql/{table._name}/delete_pk.sql", table))
+            targets.append(Target("sql/delete-all.hbs",    f"sql/{table._name}/delete-all.sql", table))
+            targets.append(Target("sql/delete-pk.hbs",     f"sql/{table._name}/delete-pk.sql", table))
             for c in table.indexed:
-                targets.append(Target("sql/select_index-pk.hbs", f"sql/{table._name}/select_{c.short}-pk.sql", c))
-                targets.append(Target("sql/delete_index.hbs",    f"sql/{table._name}/delete_{c.short}.sql", c))
+                targets.append(Target("sql/select_pk-index.hbs", f"sql/{table._name}/select_pk-{c.short}.sql", c))
+                targets.append(Target("sql/delete-index.hbs",    f"sql/{table._name}/delete-{c.short}.sql", c))
             if table.nonkeys:
-                targets.append(Target("sql/select_all-full.hbs", f"sql/{table._name}/select_all-full.sql", table))
-                targets.append(Target("sql/select_pk-full.hbs",  f"sql/{table._name}/select_pk-full.sql", table))
+                targets.append(Target("sql/select_full-all.hbs", f"sql/{table._name}/select_full-all.sql", table))
+                targets.append(Target("sql/select_full-pk.hbs",  f"sql/{table._name}/select_full-pk.sql", table))
                 targets.append(Target("sql/insert.hbs",        f"sql/{table._name}/insert.sql", table))
                 targets.append(Target("sql/update.hbs",          f"sql/{table._name}/update.sql", table))
                 for c in table.indexed:
-                    targets.append(Target("sql/select_index-full.hbs", f"sql/{table._name}/select_{c.short}-full.sql", c))
+                    targets.append(Target("sql/select_full-index.hbs", f"sql/{table._name}/select_full-{c.short}.sql", c))
         # Generate
         super().generate(targets, output_dir, self._meta)

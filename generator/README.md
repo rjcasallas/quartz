@@ -18,7 +18,7 @@ pip3 install pyyaml
 
 ```bash
 python3 generator/python/main.py sql
-python3 generator/python/main.py sql -s examples/db/books.sql -o examples/db
+python3 generator/python/main.py sql -s examples/db/sqlite.sql -o examples/db
 ```
 
 ## Dataset
@@ -26,7 +26,11 @@ python3 generator/python/main.py sql -s examples/db/books.sql -o examples/db
 ```bash
 # Schema
 python3 generator/python/main.py ds
+
 # Python
-python3 generator/python/main.py ds python -s examples/db/books.sql -o examples/python/ds
-python3 generator/python/main.py ds python -s examples/db/books.sql -o examples/python/ds -f -r -m -q -a
+python3 generator/python/main.py ds python -s examples/db/sqlite.sql -o examples/python/ds
+python3 generator/python/main.py ds python -s examples/db/sqlite.sql -o examples/python/ds -b -d -a
+
+# PHP
+python3 generator/python/main.py ds php -s examples/db/sqlite.sql -o examples/php/ds -n books -b -d -a
 ```

@@ -1,0 +1,37 @@
+<?php
+namespace {{_namespace}};
+require_once __DIR__ . '/../common/data/base.php';
+{{#each apis}}
+require_once __DIR__ . '/api/{{-name}}.php';
+{{/each}}
+
+
+class Engine {
+    private $db = null;
+{{#each apis}}
+    public ${{-plural}} = null;
+{{/each}}
+
+    function __construct(string $scheme, ?string $queries=null) {
+        # Database
+        $this->db = new \quartz\Database($scheme, $queries);
+        # Entities
+{{#each apis}}
+        $this->{{-plural}} = new {{-pascal}}Manager($this->db, $this);
+{{/each}}
+    }
+
+    function open(bool $reset=false) {
+        $this->db->open(getenv('DB_NAME'), getenv('DB_USER'), getenv('DB_PASS'), reset:$reset);
+    }
+
+    function isOpen(): bool {
+        return $this->db.isOpen();
+    }
+
+    function close() {
+        $this->db->close();
+    }
+}
+
+?>

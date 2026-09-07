@@ -1,0 +1,107 @@
+<?php
+namespace {{_namespace}};
+require_once __DIR__ . '/../common/data/base.php';
+
+#
+# Fields ({{-len fields}})
+#
+
+enum Fields {
+{{#each fields}}
+    case {{{-pascal}}};
+{{/each}}
+}
+
+#
+# Entities ({{-len entities}})
+#
+{{#each entities}}
+
+class {{-ref}} extends \quartz\Reference {
+
+    public static function valid($x, $nullable=false) {
+        if ($nullable && is_null($x)) {
+            return null;
+        }
+        elseif (is_int($x)) {
+            return $x;
+        }
+        elseif ($x instanceof {{-ref}}) {
+            return $x;
+        }
+        throw new Exception("Invalid {{name}} reference: $x");
+    }
+}
+
+{{/each}}
+#
+# Junctions ({{-len junctions}})
+#
+{{#each junctions}}
+
+class {{-ref}} {
+{{#each keys}}
+    public ${{name}};
+{{/each}}
+
+    public function __construct({{#-list keys}}${{-param}}=null{{/-list}}) {
+{{#each keys}}
+        $this->{{name}} = ${{-param}};
+{{/each}}
+    }
+
+    public function __toString(): string {
+{{#each keys}}
+        ${{-name-}} = is_null($this->{{name}}) ? '∅' : $this->{{name}};
+{{/each}}
+        return "{{-name}}{{#each keys}}⌗{${{-name-}}}{{/each}}";
+    }
+}
+
+{{#if aggregate}}
+
+class {{-pascal}} extends {{-ref}} {
+{{#each nonkeys}}
+    public ${{name}};
+{{/each}}
+
+    public function __construct({{#-list columns}}${{-param}}=null{{/-list}}) {
+        parent::__construct({{#-list keys}}${{-param}}{{/-list}});
+{{#each nonkeys}}
+        $this->{{name}} = ${{-param}};
+{{/each}}
+    }
+
+    public function __toString(): string {
+        $ref = parent::__toString();
+{{#each nonkeys}}
+        ${{-name-}} = is_null($this->{{name}}) ? '∅' : $this->{{name}};
+{{/each}}
+        return "$ref({{#-list nonkeys}}{{name}}:{${{-name-}}}{{/-list}})";
+    }
+
+    public function copy($x) {
+        if ($x instanceof {{-ref}}) {
+            parent::copy($x);
+{{#each nonkeys}}
+            $this->{{name}} = x.{{name}};
+{{/each}}
+        }
+    }
+}
+
+{{/if}}
+{{/each}}
+#
+# Self-referencing ({{-len recursive}})
+#
+
+{{#each recursive}}
+# {{{this}}}
+class {{-ref_from}} extends {{-ref source.table}} {
+
+}
+
+{{/each}}
+
+?>

@@ -1,2 +1,2 @@
-@book/select_all-pk
+@book/select_pk-all
  WHERE b.`id`=?

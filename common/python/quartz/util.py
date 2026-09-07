@@ -16,18 +16,18 @@ class Parse:
             return "∅"
         elif isinstance(x, str):
             return x
-        elif isinstance(x, bool):
-            return x and "●" or "○"
+        elif isinstance(x, Enum):
+            return x.name.lower()
         elif isinstance(x, int):
             return str(x)
         elif isinstance(x, float):
             return str(x)
+        elif isinstance(x, bool):
+            return x and "●" or "○"
         elif isinstance(x, list):
             return ", ".join(map(Parse.string, x))
         elif isinstance(x, dict):
             return ", ".join(f"{k}: {v}" for k, v in x.items())
-        elif isinstance(x, Enum):
-            return x.name
         else:
             return str(x)
 
@@ -50,7 +50,7 @@ class Parse:
             return int(x)
 
     @staticmethod
-    def float(x) -> float:
+    def real(x) -> float:
         if x is None:
             return 0.0
         elif isinstance(x, float):

@@ -1,193 +1,300 @@
-# Tests for the args module.
+from quartz.log import Log
+from quartz.args import Types, Parameter, Argument, NamedArgumentSet, OrderedArgumentSet, Arguments
 import unittest
 
-from quartz.args import (
-    Parameter,
-    Argument,
-    NamedArgumentSet,
-    FixedArgumentSet,
-    Arguments,
-    Types,
-)
+unittest.TestLoader.sortTestMethodsUsing = None
 
 
-class TestParameter(unittest.TestCase):
+class TestBase:
 
     def setUp(self):
-        self.param = Parameter("test", "t", Types.Text, "default_value", "Test parameter")
+        pass
 
-    def test_parameter_init(self):
-        self.assertEqual(self.param.name, "test")
-        self.assertEqual(self.param.short, "t")
-        self.assertEqual(self.param.type, Types.Text)
-        self.assertEqual(self.param.default, "default_value")
-        self.assertEqual(self.param.description, "Test parameter")
-        self.assertFalse(self.param.hidden)
-
-    def test_parameter_hidden(self):
-        param = Parameter("hidden", None, Types.Flag, hidden=True)
-        self.assertTrue(param.hidden)
-
-    def test_parameter_repr(self):
-        repr_str = repr(self.param)
-        self.assertIn('test', repr_str)
-        self.assertIn("Text", repr_str)
-        self.assertIn("default_value", repr_str)
-
-    def test_parameter_eq(self):
-        self.assertEqual(
-            Parameter("same", None, Types.Text), Parameter("same", "s", Types.Flag)
-        )
-        self.assertEqual(self.param, "test")
-        self.assertNotEqual(self.param, "other")
+    def tearDown(self):
+        pass
 
 
-class TestArgument(unittest.TestCase):
+class TestA(TestBase, unittest.TestCase):
 
-    def setUp(self):
-        self.arg = Argument("verbose", "v", Types.Boolean, False)
+    def testParameter(self):
+        Log.test("\nTest Parameter")
+        r = Parameter("red", None, Types.Text)
+        g = Parameter("green", "g", Types.Int8u, 42, "Olive green", False)
+        b = Parameter("blue", "bl", Types.Real, description="Sky blue", hidden=True, default=1.2)
+        y = Parameter("yellow", "yel", Types.Boolean, description="Sunny", default=True)
+        # red
+        self.assertEqual(r.name, "red")
+        self.assertIsNone(r.short)
+        self.assertEqual(r.type, Types.Text)
+        self.assertIsNone(r.default)
+        self.assertIsNone(r.description)
+        self.assertEqual(r.hidden, False)
+        # green
+        self.assertEqual(g.name, "green")
+        self.assertEqual(g.short, "g")
+        self.assertEqual(g.type, Types.Int8u)
+        self.assertEqual(g.default, 42)
+        self.assertEqual(g.description, "Olive green")
+        self.assertEqual(g.hidden, False)
+        # blue
+        self.assertEqual(b.name, "blue")
+        self.assertEqual(b.short, "bl")
+        self.assertEqual(b.type, Types.Real)
+        self.assertEqual(b.default, 1.2)
+        self.assertEqual(b.description, "Sky blue")
+        self.assertEqual(b.hidden, True)
+        # yellow
+        self.assertEqual(y.name, "yellow")
+        self.assertEqual(y.short, "yel")
+        self.assertEqual(y.type, Types.Boolean)
+        self.assertEqual(y.default, True)
+        self.assertEqual(y.description, "Sunny")
+        self.assertEqual(y.hidden, False)
 
-    def test_argument_value_and_reset(self):
-        self.assertFalse(self.arg.value)
-        self.arg.value = True
-        self.assertTrue(self.arg.value)
-        self.arg.reset()
-        self.assertFalse(self.arg.value)
+    def testArgument(self):
+        Log.test("\nTest Argument")
+        r = Argument("red", None, Types.Text)
+        g = Argument("green", "g", Types.Int8u, 42, "Olive green", False)
+        b = Argument("blue", "bl", Types.Real, description="Sky blue", hidden=True, default=1.2)
+        y = Argument("yellow", "yel", Types.Boolean, description="Sunny", default=True)
+        # values
+        r.value = "abc123"
+        g.value = 213
+        b.value = 12.34
+        y.value = "false"
+        # red
+        self.assertEqual(r.name, "red")
+        self.assertIsNone(r.short)
+        self.assertEqual(r.type, Types.Text)
+        self.assertIsNone(r.default)
+        self.assertIsNone(r.description)
+        self.assertEqual(r.hidden, False)
+        self.assertEqual(r.value, "abc123")
+        r.value = 12
+        self.assertEqual(r.value, "12")
+        r.value = 2.3
+        self.assertEqual(r.value, "2.3")
+        r.value = False
+        self.assertEqual(r.value, "false")
+        r.reset()
+        self.assertIsNone(r.value)
+        # green
+        self.assertEqual(g.name, "green")
+        self.assertEqual(g.short, "g")
+        self.assertEqual(g.type, Types.Int8u)
+        self.assertEqual(g.default, 42)
+        self.assertEqual(g.description, "Olive green")
+        self.assertEqual(g.hidden, False)
+        self.assertEqual(g.value, 213)
+        g.value = "34"
+        self.assertEqual(g.value, 34)
+        g.reset()
+        self.assertEqual(g.value, 42)
+        # blue
+        self.assertEqual(b.name, "blue")
+        self.assertEqual(b.short, "bl")
+        self.assertEqual(b.type, Types.Real)
+        self.assertEqual(b.default, 1.2)
+        self.assertEqual(b.description, "Sky blue")
+        self.assertEqual(b.hidden, True)
+        self.assertEqual(b.value, 12.34)
+        b.value = 123
+        self.assertEqual(b.value, 123)
+        b.value = "5.3"
+        self.assertEqual(b.value, 5.3)
+        b.reset()
+        self.assertEqual(b.value, 1.2)
+        # yellow
+        self.assertEqual(y.name, "yellow")
+        self.assertEqual(y.short, "yel")
+        self.assertEqual(y.type, Types.Boolean)
+        self.assertEqual(y.default, True)
+        self.assertEqual(y.description, "Sunny")
+        self.assertEqual(y.hidden, False)
+        self.assertEqual(y.value, False)
+        y.value = 1
+        self.assertEqual(y.value, True)
+        y.value = False
+        self.assertEqual(y.value, False)
+        y.reset()
+        self.assertEqual(y.value, True)
 
-    def test_argument_converters(self):
-        text = Argument("name", "n", Types.Text, "alice")
-        number = Argument("count", "c", Types.Int32u, "42")
-        real = Argument("ratio", "r", Types.Real, "3.5")
-        flag = Argument("enabled", "e", Types.Boolean, "yes")
+    def testNamedArgumentSet(self):
+        Log.test("\nTest NamedArgumentSet")
+        args = NamedArgumentSet()
+        args.add("red", None, Types.Real)
+        args.add("green", "g", Types.Boolean, True)
+        args.add("blue", "b", Types.Text, "once in a blue moon")
+        args.add("cyan", "c", Types.Int16s, -4321)
+        # red
+        r = args.get("red")
+        self.assertIsNotNone(r)
+        self.assertEqual(r.name, "red")
+        self.assertEqual(r.type, Types.Real)
+        self.assertIsNone(r.default)
+        self.assertIsNone(r.value)
+        r.value = 0.12345
+        self.assertIsNone(r.default)
+        self.assertEqual(r.value, 0.12345)
+        self.assertEqual(args.real("red"), 0.12345)
+        # green
+        g = args.get("g")
+        self.assertIsNotNone(g)
+        self.assertEqual(g.name, "green")
+        self.assertEqual(g.type, Types.Boolean)
+        self.assertEqual(g.default, True)
+        self.assertEqual(g.value, True)
+        g.value = 0
+        self.assertEqual(g.default, True)
+        self.assertEqual(g.value, False)
+        self.assertEqual(args.boolean("g"), False)
+        # blue
+        b = args.get("blue")
+        self.assertIsNotNone(b)
+        self.assertEqual(b.name, "blue")
+        self.assertEqual(b.type, Types.Text)
+        self.assertEqual(b.default, "once in a blue moon")
+        self.assertEqual(b.value, "once in a blue moon")
+        b.value = "something else"
+        self.assertEqual(b.default, "once in a blue moon")
+        self.assertEqual(b.value, "something else")
+        self.assertEqual(args.string("b"), "something else")
+        # cyan
+        c = args.get("c")
+        self.assertIsNotNone(b)
+        self.assertEqual(c.name, "cyan")
+        self.assertEqual(c.type, Types.Int16s)
+        self.assertEqual(c.default, -4321)
+        self.assertEqual(c.value, -4321)
+        c.value = 1025
+        self.assertEqual(c.default, -4321)
+        self.assertEqual(c.value, 1025)
+        self.assertEqual(args.integer("cyan"), 1025)
 
-        self.assertEqual(text.string(), "alice")
-        self.assertEqual(number.integer(), 42)
-        self.assertAlmostEqual(real.float(), 3.5)
-        self.assertTrue(flag.boolean())
+    def testOrderedArgumentSet(self):
+        Log.test("\nTest OrderedArgumentSet")
+        args = OrderedArgumentSet()
+        args.add("red", Types.Real)
+        args.add("green", Types.Boolean, True)
+        args.add("blue", Types.Text, "once in a blue moon")
+        args.add("cyan", Types.Int16s, -4321)
+        # red
+        r = args.get(0)
+        self.assertIsNotNone(r)
+        self.assertEqual(r.name, "red")
+        self.assertEqual(r.type, Types.Real)
+        self.assertIsNone(r.default)
+        self.assertIsNone(r.value)
+        r.value = 0.12345
+        self.assertIsNone(r.default)
+        self.assertEqual(r.value, 0.12345)
+        self.assertEqual(args.real("red"), 0.12345)
+        # green
+        g = args.get(1)
+        self.assertIsNotNone(g)
+        self.assertEqual(g.name, "green")
+        self.assertEqual(g.type, Types.Boolean)
+        self.assertEqual(g.default, True)
+        self.assertEqual(g.value, True)
+        g.value = 0
+        self.assertEqual(g.default, True)
+        self.assertEqual(g.value, False)
+        self.assertEqual(args.boolean("green"), False)
+        # blue
+        b = args.get(2)
+        self.assertIsNotNone(b)
+        self.assertEqual(b.name, "blue")
+        self.assertEqual(b.type, Types.Text)
+        self.assertEqual(b.default, "once in a blue moon")
+        self.assertEqual(b.value, "once in a blue moon")
+        b.value = "something else"
+        self.assertEqual(b.default, "once in a blue moon")
+        self.assertEqual(b.value, "something else")
+        self.assertEqual(args.string("blue"), "something else")
+        # cyan
+        c = args.get(3)
+        self.assertIsNotNone(b)
+        self.assertEqual(c.name, "cyan")
+        self.assertEqual(c.type, Types.Int16s)
+        self.assertEqual(c.default, -4321)
+        self.assertEqual(c.value, -4321)
+        c.value = 1025
+        self.assertEqual(c.default, -4321)
+        self.assertEqual(c.value, 1025)
+        self.assertEqual(args.integer("cyan"), 1025)
 
+    def testArguments(self):
+        Log.test("\nTest Arguments")
+        args = Arguments()
+        args.dashed.add("cyan", "c", Types.Int16s)
+        args.fixed.add("red", Types.Real)
+        args.dashed.add("yellow", "y", Types.Int16u)
+        args.dashed.add("margenta", "ma", Types.Binary)
+        args.fixed.add("green", Types.Boolean)
+        args.fixed.add("blue", Types.Text)
+        # red
+        r = args.get(0)
+        self.assertIsNotNone(r)
+        self.assertEqual(r.name, "red")
+        self.assertEqual(r.type, Types.Real)
+        self.assertIsNone(r.default)
+        self.assertIsNone(r.value)
+        r.value = 0.12345
+        self.assertIsNone(r.default)
+        self.assertEqual(r.value, 0.12345)
+        self.assertEqual(args.real("red"), 0.12345)
+        # green
+        g = args.get(1)
+        self.assertIsNotNone(g)
+        self.assertEqual(g.name, "green")
+        self.assertEqual(g.type, Types.Boolean)
+        self.assertIsNone(g.default)
+        self.assertIsNone(g.value)
+        g.value = 0
+        self.assertIsNone(g.default)
+        self.assertEqual(g.value, False)
+        self.assertEqual(args.boolean("green"), False)
+        # blue
+        b = args.get(2)
+        self.assertIsNotNone(b)
+        self.assertEqual(b.name, "blue")
+        self.assertEqual(b.type, Types.Text)
+        self.assertIsNone(b.default)
+        # Log.debug(f"B: {b}; {type(b)}")
+        self.assertIsNone(b.value)
+        b.value = "something else"
+        self.assertIsNone(b.default)
+        self.assertEqual(b.value, "something else")
+        self.assertEqual(args.string("blue"), "something else")
+        # cyan
+        c = args.get("cyan")
+        self.assertIsNotNone(b)
+        self.assertEqual(c.name, "cyan")
+        self.assertEqual(c.type, Types.Int16s)
+        self.assertIsNone(c.default)
+        self.assertIsNone(c.value)
+        c.value = 1025
+        self.assertIsNone(c.default)
+        self.assertEqual(c.value, 1025)
+        self.assertEqual(args.integer("cyan"), 1025)
 
-class TestNamedArgumentSet(unittest.TestCase):
-
-    def setUp(self):
-        self.args = NamedArgumentSet()
-
-    def test_add_find_by_name_and_short(self):
-        self.args.add("verbose", "v", Types.Flag)
-        self.assertIn("verbose", self.args)
-        self.assertIn("v", self.args)
-        self.assertEqual(self.args.get("verbose").name, "verbose")
-        self.assertEqual(self.args.get("v").name, "verbose")
-
-    def test_set_and_reset(self):
-        self.args.add("input", "i", Types.Text, "a.txt")
-        self.args.set("input", "b.txt")
-        self.assertEqual(self.args.get("input").value, "b.txt")
-        self.args.reset()
-        self.assertEqual(self.args.get("input").value, "a.txt")
-
-    def test_parent_lookup(self):
-        parent = NamedArgumentSet()
-        parent.add("debug", "d", Types.Flag)
-        child = NamedArgumentSet()
-        child.parent = parent
-        self.assertIsNotNone(child.find("debug"))
-        self.assertIsNotNone(child.find("d"))
-
-
-class TestFixedArgumentSet(unittest.TestCase):
-
-    def setUp(self):
-        self.args = FixedArgumentSet()
-
-    def test_add_find_by_index_and_name(self):
-        self.args.add("file", Types.Text)
-        self.assertEqual(len(self.args), 1)
-        self.assertEqual(self.args.get(0).name, "file")
-        self.assertEqual(self.args.get("file").name, "file")
-
-    def test_add_duplicate_name_keeps_single_entry(self):
-        self.args.add("file", Types.Text)
-        self.args.add("file", Types.Path)
-        self.assertEqual(len(self.args), 1)
-        self.assertEqual(self.args.get(0).type, Types.Path)
-
-
-class TestArguments(unittest.TestCase):
-
-    def setUp(self):
-        self.args = Arguments()
-
-    def test_arguments_len(self):
-        self.assertEqual(len(self.args), 0)
-        self.args.dashed.add("verbose", "v", Types.Flag)
-        self.args.fixed.add("file", Types.Text)
-        self.assertEqual(len(self.args), 2)
-
-    def test_getitem_with_name_index_and_parameter(self):
-        self.args.dashed.add("verbose", "v", Types.Flag)
-        self.args.fixed.add("file", Types.Text)
-        self.args.parse(["-v", "main.txt"])
-
-        self.assertTrue(self.args["verbose"].value)
-        self.assertEqual(self.args[0].value, "main.txt")
-        self.assertTrue(self.args[Parameter("verbose", None, Types.Flag)].value)
-
-    def test_parse_long_and_short_with_values(self):
-        self.args.dashed.add("input", "i", Types.Text)
-        self.args.dashed.add("verbose", "v", Types.Boolean)
-        self.args.fixed.add("output", Types.Text)
-        self.args.parse(["--input", "in.txt", "-v", "yes", "out.txt"])
-
-        self.assertEqual(self.args.get("input").value, "in.txt")
-        self.assertTrue(self.args.get("verbose").value)
-        self.assertEqual(self.args.get("output").value, "out.txt")
-
-    def test_parse_multiple_short_flags(self):
-        self.args.dashed.add("verbose", "v", Types.Flag)
-        self.args.dashed.add("debug", "d", Types.Flag)
-        self.args.parse(["-vd"])
-        self.assertTrue(self.args.get("verbose").value)
-        self.assertTrue(self.args.get("debug").value)
-
-    def test_parse_with_defaults(self):
-        self.args.dashed.add("verbose", "v", Types.Boolean, False)
-        self.args.parse([])
-        self.assertFalse(self.args.get("verbose").value)
-
-    def test_unknown_option_exits(self):
-        with self.assertRaises(SystemExit):
-            self.args.parse(["--unknown"])
-
-    def test_missing_value_exits(self):
-        self.args.dashed.add("input", "i", Types.Text)
-        with self.assertRaises(SystemExit):
-            self.args.parse(["--input"])
-
-    def test_too_many_fixed_exits(self):
-        self.args.fixed.add("file", Types.Text)
-        with self.assertRaises(SystemExit):
-            self.args.parse(["a.txt", "b.txt"])
-
-    def test_not_enough_fixed_exits(self):
-        self.args.dashed.add("help", "h", Types.Boolean, False)
-        self.args.fixed.add("file1", Types.Text)
-        self.args.fixed.add("file2", Types.Text)
-        with self.assertRaises(SystemExit):
-            self.args.parse(["a.txt"])
-
-    def test_parse_ignore(self):
-        self.args.dashed.add("known", "k", Types.Flag)
-        self.args.parse(["--unknown", "-k", "extra"], ignore=True)
-        self.assertTrue(self.args.get("known").value)
-
-    def test_find_with_parent(self):
-        parent = Arguments()
-        parent.dashed.add("parent_opt", "p", Types.Text, "x")
-        child = Arguments()
-        child.parent = parent
-
-        self.assertEqual(child.find("parent_opt").name, "parent_opt")
-        self.assertEqual(child.find("p").name, "parent_opt")
+    def testParse(self):
+        Log.test("\nTest Parse")
+        args = Arguments()
+        args.dashed.add("cyan", "c", Types.Int16s)
+        args.fixed.add("red", Types.Real)
+        args.dashed.add("yellow", "y", Types.Int16u)
+        args.dashed.add("margenta", "ma", Types.Binary)
+        args.fixed.add("green", Types.Boolean)
+        args.dashed.add("orange", "o", Types.Flag)
+        args.fixed.add("blue", Types.Text)
+        args.parse([ "-ma", "abcdef123456", "123.45", "--orange", "true", "-c", "-3", "----yellow", "456", "Sky" ])
+        self.assertEqual(args.real("red"), 123.45)
+        self.assertEqual(args.boolean("green"), True)
+        self.assertEqual(args.string("blue"), "Sky")
+        self.assertEqual(args.integer("c"), -3)
+        self.assertEqual(args.integer("yellow"), 456)
+        self.assertEqual(args.boolean("o"), True)
 
 
 if __name__ == "__main__":

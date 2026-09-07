@@ -1,4 +1,4 @@
-from ds.model._reference import *
+from ds.base import *
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -36,3 +36,9 @@ class Author(AuthorRef):
             super().copy(x)
             self.name = x.name
         return self
+
+    @staticmethod
+    def valid(x):
+        if isinstance(x, Author):
+            return x
+        Error.invalid("Author", x)

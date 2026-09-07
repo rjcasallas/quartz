@@ -1,4 +1,4 @@
-import quartz.gen.data as _base
+import quartz.data.base as _base
 from quartz.error import Error
 from quartz.log import Log
 
@@ -8,17 +8,17 @@ from quartz.log import Log
 
 class Dataset:
 
-{{#each entities}}
+{{#each subsets}}
     class {{-ppascal}}(_base.{{#if nonkeys}}Entity{{else}}Basic{{/if}}Subset):
         pass
 
 {{/each}}
     def __init__(self):
-{{#each entities}}
+{{#each subsets}}
         self._{{-plural}} = None
 {{/each}}
 
-{{#each entities}}
+{{#each subsets}}
     @property
     def {{-plural}}(self) -> {{-ppascal}}:
         if self._{{-plural}} is None: Error.fail(f"Not initialized: {{-plural}}.")
@@ -26,7 +26,7 @@ class Dataset:
 
 {{/each}}
     def print(self, level = 0):
-{{#each entities}}
+{{#each subsets}}
         # {{-plural}}
         {{-plural}} = self.{{-plural}}.all()
         Log.list("{{-plural}}({})".format(len({{-plural}})), level + 1)

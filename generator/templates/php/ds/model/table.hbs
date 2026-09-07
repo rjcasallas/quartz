@@ -1,0 +1,36 @@
+<?php
+namespace {{_namespace}}\model;
+require_once __DIR__ . '/../base.php';
+
+
+class {{-pascal}} extends \{{_namespace}}\{{-ref}} {
+{{#each nonkeys}}
+    public ${{name}};
+{{/each}}
+
+    function __construct({{#-list nonkeys keys}}${{-param}}=null{{/-list}}) {
+        parent::__construct({{#-list keys}}${{-param}}{{/-list}});
+{{#each nonkeys}}
+        $this->{{name}} = ${{-param}};
+{{/each}}
+    }
+
+    public function __toString(): string {
+        $ref = parent::__toString();
+{{#each nonkeys}}
+        ${{-name-}} = is_null($this->{{name}}) ? '∅' : $this->{{name}};
+{{/each}}
+        return "{{name}}$ref({{#-list nonkeys}}{{name}}:{${{-name-}}}{{/-list}})";
+    }
+
+    public function copy($x) {
+        if ($x instanceof {{-ref}}) {
+            parent::copy($x);
+{{#each nonkeys}}
+            $this->{{name}} = x.{{name}};
+{{/each}}
+        }
+    }
+}
+
+?>

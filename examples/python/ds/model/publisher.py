@@ -1,4 +1,4 @@
-from ds.model._reference import *
+from ds.base import *
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -46,3 +46,9 @@ class Publisher(PublisherRef):
             self.parent_id = x.parent_id
             self.name = x.name
         return self
+
+    @staticmethod
+    def valid(x):
+        if isinstance(x, Publisher):
+            return x
+        Error.invalid("Publisher", x)

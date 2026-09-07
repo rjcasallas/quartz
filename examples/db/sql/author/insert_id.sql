@@ -1,2 +1,2 @@
-INSERT INTO `author`(`id`, `name`)
+REPLACE INTO `author`(`id`, `name`)
 VALUES (?, ?)

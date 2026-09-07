@@ -1,2 +1,2 @@
-INSERT INTO `{{name}}`({{#-list columns}}`{{name}}`{{/-list}})
+REPLACE INTO `{{name}}`({{#-list columns}}`{{name}}`{{/-list}})
 VALUES ({{#-list columns}}?{{/-list}})

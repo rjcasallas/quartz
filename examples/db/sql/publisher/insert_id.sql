@@ -1,2 +1,2 @@
-INSERT INTO `publisher`(`id`, `parent_id`, `name`)
+REPLACE INTO `publisher`(`id`, `parent_id`, `name`)
 VALUES (?, ?, ?)

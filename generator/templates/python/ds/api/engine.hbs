@@ -1,0 +1,29 @@
+import {{_module}}.dataset as _ds
+import {{_module}}.api._core as _core
+{{#each apis}}
+from {{_module}}.api.{{-name}} import *
+{{/each}}
+
+
+#
+# Engine
+#
+
+class Engine(_core.Engine):
+
+    def __init__(self, schema_path:str, file_path:str):
+        # Dataset
+        self._ds = _ds.Dataset(schema_path, file_path)
+        # Entities
+{{#each apis}}
+        self._{{-plural}} = {{-pascal}}Manager(self, self._ds)
+{{/each}}
+
+    def open(self, reset: bool = False):
+        self._ds.open(reset)
+
+    def isOpen(self):
+        return self._ds.isOpen()
+
+    def close(self):
+        self._ds.close()

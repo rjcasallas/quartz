@@ -1,2 +1,2 @@
-@publisher/select_all-pk
+@publisher/select_pk-all
  WHERE p.`id`=?

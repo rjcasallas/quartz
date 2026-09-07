@@ -1,4 +1,4 @@
-from {{_module}}.model._reference import *
+from {{_module}}.base import *
 from quartz.error import Error
 from quartz.util import Parse
 
@@ -6,9 +6,13 @@ from quartz.util import Parse
 # {{#if parent}}Child{{else}}Entity{{/if}}
 #
 
-class {{-core}}({{-ref}}):
+class {{-model}}({{-ref}}):
 
+{{#if is_entity}}
     def __init__(self, {{#-list nonkeys keys}}{{-param}}=None{{/-list}}):
+{{else}}
+    def __init__(self, {{#-list columns}}{{-param}}=None{{/-list}}):
+{{/if}}
         super().__init__({{#-list keys}}{{-param}}{{/-list}})
 {{#each nonkeys}}
         self.{{-name}} = {{-param}}
@@ -44,9 +48,15 @@ class {{-core}}({{-ref}}):
 {{/each}}
 
     def copy(self, x):
-        if isinstance(x, {{-core}}):
+        if isinstance(x, {{-model}}):
             super().copy(x)
 {{#each nonkeys}}
             self.{{-name}} = x.{{-name}}
 {{/each}}
         return self
+
+    @staticmethod
+    def valid(x):
+        if isinstance(x, {{-model}}):
+            return x
+        Error.invalid("{{-model}}", x)

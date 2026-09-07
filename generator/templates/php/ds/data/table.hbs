@@ -1,0 +1,251 @@
+<?php
+namespace {{_namespace}};
+require_once __DIR__ . '/../base.php';
+require_once __DIR__ . '/../model/{{-name}}.php';
+require_once __DIR__ . '/../../common/data/base.php';
+require_once __DIR__ . '/../../common/data/table.php';
+require_once __DIR__ . '/../../common/error.php';
+
+use quartz\Info, quartz\TagInfo, quartz\KeyInfo;
+use quartz\Log;
+
+
+class {{-pascal}}Data {
+    private \quartz\Table $table;
+
+    function __construct(\quartz\Database $db) {
+        $this->table = new {{-pascal}}Table("{{name}}", $db);
+    }
+
+    function add($x, bool $debug=false) {
+        if (($x instanceof {{#if nonkeys}}{{-model}}{{else}}{{-ref}}{{/if}}) && is_null($x->id)) {
+            $x->id = $this->table->insert($x, $debug);
+        }
+        elseif (!$this->_replace($x, $debug)) {
+            $this->table->insert($x, $debug);
+        }
+        return $x;
+    }
+
+    function push($x, bool $debug=false) {
+        if (!$this->_replace($x, $debug)) {
+{{#if nonkeys}}
+            if (is_array($x) && (x[0] instanceof {{-model}}) && (x[1] instanceof Fields)) {
+                // Individual fields
+                [$o, $f] = $x;
+{{#each nonkeys}}
+                if ($f == Fields::{{-pascal short}}) {
+                    $x = new KeyInfo("{{-name table}}", [ {{#-list table.keys}}["{{name}}", $o->{{name}}]{{/-list}} ], [ ["{{name}}", $o->{{name}}] ]);
+                }
+{{/each}}
+{{/if}}
+            }
+            // Update
+            return $this->table->update($x, $debug);
+        }
+    }
+
+{{#if nonkeys}}
+    function pull({{-model}} $x, ?Fields $field=null, bool $debug=false) {
+        if (is_null($field)) {
+            $row = $this->table->select(KeyInfo("{{name}}", [ {{#-list keys}}["{{name}}", $x->{{name}}]{{/-list}} ], [ {{#-list nonkeys}}["{{name}}", $x->{{name}}]{{/-list}} ]), one:true, debug:$debug);
+{{#each nonkeys}}
+            $x->{{name}} = $row[{{@index}}];
+{{/each}}
+        }
+{{#each nonkeys}}
+        elseif (field == Fields::{{-pascal short}}) {
+            $x->{{name}} = $this->table->select(KeyInfo("{{-name table}}", [ {{#-list table.keys}}["{{name}}", $x->{{name}}]{{/-list}} ], [ ["{{name}}", $x->{{name}}] ]), one:true, debug:$debug)[0];
+        }
+{{/each}}
+    }
+{{/if}}
+    function remove($x, bool $debug=false) {
+        return $this->table->delete($x, $debug);
+    }
+
+    function has($x, bool $debug=false): bool {
+        return !is_null($this->ref($x, $debug));
+    }
+
+    function clear($debug=false) {
+        $this->table->deleteAll(debug);
+    }
+
+    function refb($x=null, ?array $order=null, ?string $limit=null, bool $debug=false) {
+        return $this->table->begin($x, 'pk', $order, $limit, $debug);
+    }
+
+    function refn($cursor) {
+        return $this->table->next($cursor, $this->reference(...));
+    }
+
+    function ref($x=null, ?array $order=null, ?string $limit=null, bool $debug=false) {
+        return $this->table->one($x, $this->reference(...), 'pk', $order, $limit, $debug);
+    }
+
+    function refs($x=null, ?array $order=null, ?string $limit=null, bool $debug=false): array {
+        return $this->table->select($x, $this->reference(...), 'pk', $order, $limit, $debug);
+    }
+{{#if nonkeys}}
+
+    function begin($x=null, ?string $columns='full', ?array $order=null, ?string $limit=null, bool $debug=false) {
+        return $this->table->begin($x, $columns, $order, $limit, $debug);
+    }
+
+    function next($cursor, ?callable $builder=null) {
+        $fn = is_null($builder) ? $this->create(...) : $builder;
+        return $this->table->next($cursor, $fn);
+    }
+
+    function one($x=null, ?callable $builder=null, ?string $columns='full', ?array $order=null, ?string $limit=null, bool $debug=false) {
+        $fn = is_null($builder) ? $this->create(...) : $builder;
+        return $this->table->one($x, $fn, $columns, $order, $limit, $debug);
+    }
+
+    function all($x=null, ?callable $builder=null, ?string $columns='full', ?array $order=null, ?string $limit=null, bool $debug=false): array {
+        $fn = is_null($builder) ? $this->create(...) : $builder;
+        return $this->table->select($x, $fn, $columns, $order, $limit, $debug);
+    }
+{{/if}}
+
+    protected function _replace($x, bool $allow_delete=false, bool $debug=false) {
+{{#each refs}}
+{{#if into}}
+        // {{{this}}}{{#if is_recursive}} (recursive){{/if}}
+        if ($x instanceof {{-ref into.table}}) {
+            if ({{#each into.table.keys}}{{#unless @first}} && {{/unless}}$x->{{-name}}{{/each}}) {
+                return $this->table->update($x, $debug);
+            }
+            elseif ($allow_delete) {
+                return $this->table->delete($x, $debug);
+            }
+            else {
+                \quartz\Error::invalid('"{{into.table}}" replace', $x);
+            }
+        }
+{{/if}}
+{{/each}}
+        return false;
+    }
+
+    protected function reference($x) {
+        return new {{-ref}}({{#each keys}}{{#unless @first}}, {{/unless}}{{-name}}:$x[{{@index}}]{{/each}});
+    }
+{{#if nonkeys}}
+
+    protected function create($x) {
+        return new {{-model}}({{#each columns}}{{#unless @first}}, {{/unless}}{{-name}}:$x[{{@index}}]{{/each}});
+    }
+{{/if}}
+}
+
+
+class {{-pascal}}Table extends \quartz\Table {
+
+    function _insert($x): ?Info {
+        // {{-name}}
+        if ($x instanceof {{#if nonkeys}}{{-model}}{{else}}{{-ref}}{{/if}}) {
+            return new Info("{{-name}}", [ {{#-list columns}}$x->{{-name}}{{/-list}} ]{{#unless auto}}, true{{/unless}});
+        }
+        return null;
+    }
+
+    function _update($x): ?Info {
+        // {{-name}}
+        if ($x instanceof {{#if nonkeys}}{{-model}}{{else}}{{-ref}}{{/if}}) {
+            return new Info("{{-name}}", [ {{#-list nonkeys keys}}$x->{{-name}}{{/-list}} ]);
+        }
+{{#each refs}}
+{{#if into}}
+        // {{{this}}}{{#if is_recursive}} (recursive){{/if}}
+        if ($x instanceof {{#if into.table.nonkeys}}{{-pascal into.table}}{{else}}{{-ref into.table}}{{/if}}) {
+            return new Info("{{-name into.table}}", [{{#-list into.table.nonkeys into.table.keys}}$x->{{-name}}{{/-list}} ], true);
+        }
+{{/if}}
+{{/each}}
+        return null;
+    }
+
+    function _delete($x): ?Info {
+{{#each refs}}
+        // {{{this}}}{{#if is_recursive}} (recursive){{/if}}
+{{#if is_recursive}}
+{{#if into}}
+        if ($x instanceof {{-pascal into.table}}Ref) {
+            return KeyInfo("{{-name into.table}}", [ {{#-list into.table.nonkeys into.table.keys}}["{{name}}", $x->{{-name}}]{{/-list}} ]);
+        }
+{{else}}
+        if ($x instanceof {{-pascal name}}Ref) {
+            return KeyInfo("{{-name target.table}}", [ ["{{key}}", $x->id] ]);
+        }
+{{/if}}
+{{else}}
+        if ($x instanceof {{-pascal into.table}}Ref) {
+            return KeyInfo("{{-name into.table}}", [ {{#-list into.table.keys}}["{{name}}", $x->{{-name}}]{{/-list}} ]);
+        }
+{{/if}}
+{{/each}}
+        // pk
+{{#if nonkeys}}
+{{#if is_entity}}
+        if (($x instanceof int) || ($x instanceof {{-ref}})) {
+            return new TagInfo("{{name}}", "pk", [ $x->id ]);
+        }
+{{else}}
+        if ($x instanceof {{-ref}}) {
+            return new TagInfo("{{name}}", "pk", [{{#-list _keys}}$x->{{-name}}{{/-list}} ]);
+        }
+{{/if}}
+{{#if _lookup}}
+        // {{_lookup}}
+        if ($x instanceof str) {
+            return new TagInfo("{{name}}", "{{_lookup}}", [ x ]);
+        }
+{{/if}}
+{{else}}
+        if ($x instanceof {{-ref}}) {
+            return new TagInfo("{{-name}}", "pk", [ {{#-list keys}}$x->{{-name}}{{/-list}} ]);
+        }
+{{/if}}
+        return null;
+    }
+
+    function _select($x=null): ?Info {
+{{#each links}}
+        // {{{this}}}{{#if is_recursive}} (recursive){{/if}}
+        if ($x instanceof {{#if is_recursive}}{{-pascal name}}{{else}}{{-pascal source.table}}{{/if}}Ref) {
+            return new TagInfo("{{-name target.table}}", "{{#if is_recursive}}{{key}}{{else}}{{source.table}}{{/if}}", [ $x->id ]);
+        }
+{{/each}}
+        // pk
+{{#if is_entity}}
+        if (($x instanceof int) || ($x instanceof {{-ref}})) {
+            return new TagInfo("{{name}}", "pk", [ $x->id ]);
+        }
+{{else}}
+        if ($x -model}}) {
+            return new TagInfo("{{name}}", "pk", [ {{#-list keys}}$x->{{-name}}{{/-list}} ]);
+        }
+{{/if}}
+{{#if lookup}}
+        // {{-name _lookup}} (lookup)
+        if ($x instanceof str) {
+            return new TagInfo("{{name}}", "{{-name _lookup}}", [ $x ]);
+        }
+{{/if}}
+{{#each foreign}}
+        // {{{-name into.table}}} (foreign)
+        if ($x instanceof {{-ref into.table}}) {
+            return new TagInfo("{{-name table}}", "{{-name into.table}}", [ $x->id ]);
+        }
+{{/each}}
+        // all
+        if (is_null($x)) {
+            return new TagInfo("{{-name}}", "all");
+        }
+        return null;
+    }
+}
+
+?>

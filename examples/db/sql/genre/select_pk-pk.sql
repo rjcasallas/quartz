@@ -1,2 +1,2 @@
-@genre/select_all-pk
+@genre/select_pk-all
  WHERE g.`id`=?

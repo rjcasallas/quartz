@@ -1,15 +1,104 @@
-import {{_module}}.base.{{name}} as _base
-from {{_module}}.base._core import Submanager
-from {{_module}}.model._reference import *
+import {{_module}}.api._core as _core
+{{#if nonkeys}}
+import {{_module}}.model.{{name}} as _model
+{{/if}}
+from {{_module}}.base import *
 
 
-class {{-pascal}}(_base.{{-pascal}}):
+class {{-pascal}}({{#if nonkeys}}_model.{{-model}}{{else}}{{-ref}}{{/if}}, _core.Entity):
+{{#each foreign}}
 
+    class {{-pascal (-name-)}}(_core.Submanager):
+
+        def pull(self):
+            if self._.{{name}} is None: return None
+            return self._en.{{-plural into.table}}.one(self._.{{name}})
+
+        def push(self, x:_core.{{-ref into.table}}):
+            self._.{{name}} = _core.{{-ref into.table}}.valid(x)
+            self._en.{{-plural this.table}}.push(self._, Fields.{{-pascal into.table}})
+{{/each}}
+
+{{#if is_entity}}
     def __init__(self, {{#-list nonkeys keys}}{{-param}}=None{{/-list}}, api=None):
-        super().__init__({{#-list nonkeys keys}}{{-param}}{{/-list}}, api)
+        super().__init__({{#-list nonkeys keys}}{{-param}}{{/-list}})
+{{else}}
+    def __init__(self, {{#-list columns}}{{-param}}=None{{/-list}}, api=None):
+        super().__init__({{#-list columns}}{{-param}}{{/-list}})
+{{/if}}
+        self._en = api
+{{#each foreign}}
+        self.{{-field-}} = {{-pascal table}}.{{-pascal (-name-)}}(self)
+{{/each}}
+{{#each foreign}}
+
+    @property
+    def {{-name-}}(self):
+        return self.{{-field-}}
+{{/each}}
+
+    def add(self, x):
+        if isinstance(x, _core.Engine):
+            return x._ds.{{-plural}}.add(self.attach(x))
+
+    def remove(self):
+        {{-subset}}.remove(self)
+        self.id = None
+
+    def push(self, field:Fields=None, api=None):
+        if api: self.attach(api)
+        return {{-subset}}.push(self, field)
+
+    def pull(self, field:Fields=None, api=None):
+        if api: self.attach(api)
+        return {{-subset}}.pull(self, field)
+
+    @staticmethod
+    def valid(x):
+        if isinstance(x, {{-model}}):
+            return x
+        Error.invalid("{{-model}}", x)
 
 
-class {{-pascal}}Manager(_base.{{-pascal}}Manager):
+class {{-pascal}}Manager(_core.Manager):
+
+    def add(self, x):
+{{#if _lookup}}
+        if isinstance(x, str):
+            y = {{-model}}({{-name _lookup}}=x, api=self._en)
+        else:
+            {{-model}}.valid(x).attach(api=self._en)
+{{else}}
+        y = {{-model}}.valid(x).attach(api=self._en)
+{{/if}}
+        return {{-subset}}.add(y)
+
+    def remove(self, x):
+        return {{-subset}}.remove(x)
+{{#if _lookup}}
+
+    def fetch(self, x:object, id:int=None) -> {{-pascal}}:
+        s = str(x)
+        o = {{-subset}}.one(s)
+        if o is None:
+            o = {{-pascal}}(id=id, {{_lookup.name}}=s, api=self._en)
+            {{-subset}}.add(o)
+        return o
+{{/if}}
+
+    def ref(self, x=None, order:list[str]=None, limit:str=None):
+        return {{-subset}}.ref(x, order, limit)
+
+    def refs(self, x=None, order:list[str]=None, limit:str=None):
+        return {{-subset}}.refs(x, order, limit)
+{{#if nonkeys}}
+
+    def one(self, x=None, order:list[str]=None, limit:str=None):
+        return {{-subset}}.one(x, self._create, 'full', order, limit)
+
+    def all(self, x=None, order:list[str]=None, limit:str=None):
+        return {{-subset}}.all(x, self._create, 'full', order, limit)
+{{/if}}
 
     def _create(self, x):
-        return {{-pascal}}({{#each columns}}{{#unless @first}}, {{/unless}}{{-name}}=x[{{@index}}]{{/each}}).attach(self.api)
+        return {{-pascal}}({{#each columns}}{{-name}}=x[{{@index}}], {{/each}}api=self._en)

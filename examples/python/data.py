@@ -1,11 +1,12 @@
 import ds.engine as _api
-import ds.sqlite._dataset as _ds
-import quartz.db.sqlite as _sqlite
+import ds.dataset as _ds
+from ds.base import *
 from quartz.app import BasicApp, Types
 from quartz.error import Error
 from quartz.log import Log
+import quartz.data.sqlite as _sqlite
 from abc import ABC, abstractmethod
-from ds.model._reference import *
+
 
 class Example(ABC):
 
@@ -227,13 +228,18 @@ class Example(ABC):
         self._updateBook(c_lang)
         self._renameBook(self.potter, "Harry Potter and the Sorcerer's Stone")
         self.print(f"{self.title} (update)")
+        b = self._selectBook(self.c_lang)
+        self.check("rename book title", b.title == "The C Programming Language, Second Edition")
+        b = self._selectBook(self.potter)
+        self.check("rename book title2", b.title == "Harry Potter and the Sorcerer's Stone")
 
         dune = Example.Book(publisher=None, title="X", year=0, id=self.dune.id)
-        self._syncBook(dune, True)
+        self._refreshBook(dune, True)
         self.check("sync book title", dune.title == self.dune.title)
         self.check("sync book title2", dune.year == 0)
-        self._syncBook(dune)
+        self._refreshBook(dune)
         self.check("sync book", dune == self.dune)
+        self.print(f"{self.title} (sync)")
 
     def select(self, level=0):
         Log.list(f"\n{self.title} (select)", level)
@@ -432,7 +438,7 @@ class Example(ABC):
         pass
 
     @abstractmethod
-    def _syncBook(self, b):
+    def _refreshBook(self, b):
         pass
 
     @abstractmethod
@@ -557,7 +563,7 @@ class RawExample(Example):
 
     def _selectAuthors(self, x=None, order_by=None):
         all = []
-        order = f"ORDER BY {order_by or 'name'}"
+        order = f"ORDER BY `{order_by or 'name'}`"
         if x is None:
             rows = self.db.all(f"SELECT a.*, NULL FROM `author` a {order}")
         elif isinstance(x, Example.Book):
@@ -594,7 +600,7 @@ class RawExample(Example):
         b.title = name
         self.db.exec("UPDATE `book` SET `title`=? WHERE `id`=?", [ b.title, b.id ])
 
-    def _syncBook(self, b:Example.Book, name_only=False):
+    def _refreshBook(self, b:Example.Book, name_only=False):
         b2 = self._selectBook(b.id)
         if name_only:
             b.title = b2.title
@@ -619,7 +625,7 @@ class RawExample(Example):
 
     def _selectBooks(self, x=None, order_by=None):
         all = []
-        order = f" ORDER BY {order_by or 'year'}"
+        order = f"ORDER BY `{order_by or 'year'}`"
         if x is None:
             rows = self.db.all(f"SELECT `id` FROM `book`{order}")
         elif isinstance(x, Example.Publisher):
@@ -674,9 +680,9 @@ class DatasetExample(Example):
         ppi = p.parent.id if p.parent else None
         pd = _ds.Publisher(id=p.id, parent_id=ppi, name=p.name)
         if parent_only:
-            self.ds.publishers.set((pd, Fields.Parent))
+            self.ds.publishers.push(pd, Fields.Parent)
         else:
-            self.ds.publishers.set(pd)
+            self.ds.publishers.push(pd)
 
     def _deletePublisher(self, x):
         if isinstance(x, int) or isinstance(x, Example.Publisher):
@@ -706,8 +712,8 @@ class DatasetExample(Example):
             self.ds.genres.add(SubgenreRef(g.parent.id, g.id))
 
     def _updateGenre(self, g):
-        self.ds.genres.set(_ds.Genre(id=g.id, name=g.name) )
-        self.ds.genres.set(SubgenreRef(g.parent.id if g.parent else None, g.id))
+        self.ds.genres.push(_ds.Genre(id=g.id, name=g.name) )
+        self.ds.genres.push(SubgenreRef(g.parent.id if g.parent else None, g.id))
 
     def _deleteGenre(self, x):
         if isinstance(x, int) or isinstance(x, Example.Genre):
@@ -741,7 +747,7 @@ class DatasetExample(Example):
         a.id = int(self.ds.authors.add(_ds.Author(a.name)))
 
     def _updateAuthor(self, a):
-        self.ds.authors.set(_ds.Author(id=a.id, name=a.name))
+        self.ds.authors.push(_ds.Author(id=a.id, name=a.name))
 
     def _deleteAuthor(self, x):
         if isinstance(x, int) or isinstance(x, Example.Author):
@@ -752,9 +758,9 @@ class DatasetExample(Example):
     def _selectAuthors(self, x=None, order_by=None):
         all = []
         if x is None:
-            rows = self.ds.authors.find(tag="full", order=order_by)
+            rows = self.ds.authors.all(columns="full", order=order_by, builder=False)
         elif isinstance(x, Example.Book):
-            rows = self.ds.authors.find(BookRef(x.id), tag="full", order=order_by)
+            rows = self.ds.authors.all(BookRef(x.id), columns="full", order=order_by, builder=False)
         else:
             Error.invalid(f"author ref", x)
         for r in rows:
@@ -774,22 +780,22 @@ class DatasetExample(Example):
         for g in b.genres:
             self.ds.genres.add(BookGenreRef(int(b), int(g)))
         for i in range(0, len(b.authors)):
-            self.ds.authors.add(_ds.BookAuthor(int(b), int(b.authors[i]), i+1))
+            self.ds.book_authors.add(_ds.BookAuthor(int(b), int(b.authors[i]), i+1))
 
     def _updateBook(self, b:Example.Book):
-        self.ds.books.set(_ds.Book(b.publisher.id, b.title, b.year, id=b.id))
+        self.ds.books.push(_ds.Book(b.publisher.id, b.title, b.year, id=b.id))
 
     def _renameBook(self, b:Example.Book, name:str):
         b.title = name
-        self.ds.books.set((_ds.Book(title=b.title, id=b.id), Fields.Title))
+        self.ds.books.push(_ds.Book(title=b.title, id=b.id), Fields.Title)
 
-    def _syncBook(self, b:Example.Book, name_only=False):
+    def _refreshBook(self, b:Example.Book, name_only=False):
         pid = int(b.publisher) if b.publisher else None
         bd = _ds.Book(publisher_id=pid, title=b.title, year=b.year, id=b.id)
         if name_only:
-            self.ds.books.get(bd, Fields.Title)
+            self.ds.books.pull(bd, Fields.Title)
         else:
-            self.ds.books.get(bd)
+            self.ds.books.pull(bd)
         b.publisher = self._selectPublisher(bd.publisher_id) if bd.publisher_id else None
         b.title = bd.title
         b.year = bd.year
@@ -808,14 +814,14 @@ class DatasetExample(Example):
     def _deleteBookAuthor(self, b, a):
         b = self._selectBook(b)
         if b:
-            self.ds.books.remove(BookAuthorRef(int(b), int(a)))
+            self.ds.book_authors.remove(BookAuthorRef(int(b), int(a)))
 
     def _selectBooks(self, x=None, order_by=None):
         all = []
         if x is None:
             rows = self.ds.books.refs(order=order_by)
         elif isinstance(x, Example.Publisher):
-            rows = self.ds.books.refs(PublisherRef(x.id), order=order_by, debug=True)
+            rows = self.ds.books.refs(PublisherRef(x.id), order=order_by)
         elif isinstance(x, Example.Genre):
             rows = self.ds.books.refs(GenreRef(x.id), order=order_by)
         elif isinstance(x, Example.Author):
@@ -850,7 +856,8 @@ class ApiExample(Example):
 
     def __init__(self, schema, path, reset):
         super().__init__("API")
-        self.api = _api.Engine(schema, path, reset)
+        self.api = _api.Engine(schema, path)
+        self.api.open(reset)
 
     # Publishers
 
@@ -863,9 +870,9 @@ class ApiExample(Example):
 
     def _updatePublisher(self, p, parent_only=False):
         pid = p.parent.id if p.parent else None
-        pd = _api.Publisher(id=p.id, parent_id=pid, name=p.name).attach(self.api)
+        pd = _api.Publisher(id=p.id, parent_id=pid, name=p.name, api=self.api)
         if parent_only:
-            pd.parent.set(pid)
+            pd.parent.push(pid)
         else:
             pd.push()
 
@@ -882,11 +889,14 @@ class ApiExample(Example):
         return all
 
     def _selectPublisher(self, x, hierarchy=False):
-        y = int(x) if isinstance(x, Example.Publisher) else x
+        if isinstance(x, int) or isinstance(x, PublisherRef) or isinstance(x, Example.Publisher):
+            y = int(x)
+        else:
+            y = x
         pd = self.api.publishers.one(y)
         if pd is None:
             Error.invalid("publisher", x)
-        pp = pd.parent.get()
+        pp = pd.parent.pull()
         pe = Example.Publisher(id=pp.id, name=pp.name) if pp else None
         return Example.Publisher(id=pd.id, parent=pe, name=pd.name)
 
@@ -899,14 +909,16 @@ class ApiExample(Example):
             pd.children.add(g.id)
 
     def _updateGenre(self, g):
-        gd = self.api.genres.set(_api.Genre(id=g.id, name=g.name, api=self.api) )
-        gd.parent.set(g.parent.id if g.parent else None)
+        gd = _api.Genre(id=g.id, name=g.name, api=self.api)
+        gd.push()
+        gd.parent.push(g.parent.id if g.parent else None)
 
     def _deleteGenre(self, x):
         if isinstance(x, int) or isinstance(x, Example.Genre):
             self.api.genres.remove(int(x))
         elif isinstance(x, str):
-            self.api.genres.remove(x)
+            gr = self.api.genres.fetch(x)
+            gr.remove()
 
     def _selectGenres(self):
         all = []
@@ -921,7 +933,7 @@ class ApiExample(Example):
         genre = Example.Genre(id=gd.id, name=gd.name) if gd else None
         if hierarchy:
             # Parent
-            gp = gd.parent.get()
+            gp = gd.parent.pull()
             genre.parent = Example.Genre(id=gp.id, name=gp.name) if gp else None
             # Children
             for g in gd.children.all():
@@ -934,7 +946,8 @@ class ApiExample(Example):
         a.id = int(self.api.authors.fetch(a.name))
 
     def _updateAuthor(self, a):
-        self.api.authors.set(_ds.Author(id=a.id, name=a.name))
+        ad = _api.Author(id=a.id, name=a.name)
+        ad.push(api=self.api)
 
     def _deleteAuthor(self, x):
         if isinstance(x, int) or isinstance(x, Example.Author):
@@ -973,27 +986,27 @@ class ApiExample(Example):
 
     def _updateBook(self, b:Example.Book):
         p = self.api.publishers.one(b.publisher.id)
-        _api.Book(p, b.title, b.year, id=b.id).attach(self.api).push()
+        _api.Book(p, b.title, b.year, id=b.id, api=self.api).push()
 
     def _renameBook(self, b:Example.Book, name:str):
         b.title = name
-        _api.Book(title=b.title, id=b.id).attach(self.api).push(Fields.Title)
+        _api.Book(title=b.title, id=b.id, api=self.api).push(Fields.Title)
 
-    def _syncBook(self, b:Example.Book, name_only=False):
+    def _refreshBook(self, b:Example.Book, name_only=False):
         pid = int(b.publisher) if b.publisher else None
-        bd = _api.Book(publisher_id=pid, title=b.title, year=b.year, id=b.id).attach(self.api)
+        bd = _api.Book(publisher_id=pid, title=b.title, year=b.year, id=b.id, api=self.api)
         if name_only:
             bd.pull(Fields.Title)
         else:
             bd.pull()
-        pd = bd.publisher.get()
+        pd = bd.publisher.pull()
         b.publisher = Example.Publisher(id=pd.id, name=pd.name) if pd else None
         b.title = bd.title
         b.year = bd.year
 
     def _deleteBook(self, x):
         if isinstance(x, int) or isinstance(x, Example.Book):
-            _api.Book(id=int(x)).attach(self.api).remove()
+            _api.Book(id=int(x), api=self.api).remove()
         elif isinstance(x, str):
             self.api.books.remove(x)
 
@@ -1051,9 +1064,9 @@ class DatasetApp(BasicApp):
         super().__init__("Dataset Example", "1.0.0")
 
     def setup(self) -> None:
-        self.args.fixed.add("schema", Types.Int16u, "examples/db/books.sql")
+        self.args.fixed.add("schema", Types.Text, "examples/db/sqlite.sql")
         self.args.dashed.add("path", "p", Types.Path, "temp/books.db")
-        self.args.dashed.add("reset", "r", Types.Boolean, True)
+        self.args.dashed.add("reset", "r", Types.Flag, True)
 
     def execute(self):
         self.print()
@@ -1063,7 +1076,7 @@ class DatasetApp(BasicApp):
         # Raw
         e = RawExample(schema, path, reset)
         e.execute()
-        # Core
+        # Dataset
         e = DatasetExample(schema, path, reset)
         e.execute()
         # API

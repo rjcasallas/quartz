@@ -1,0 +1,88 @@
+<?php
+namespace {{_namespace}};
+require_once __DIR__ . '/../data/{{-name}}.php';
+
+// Foreign: {{-len foreign}}
+{{#each foreign}}
+
+class {{-pascal (-name-)}}Subset {
+    private {{-model table}} ${{table.name}};
+
+    function __construct({{-model table}} ${{table.name}}) {
+        $this->{{table.name}} = ${{table.name}};
+    }
+
+    function get() {
+        return is_null($this->{{table.name}}->{{name}}) ? null : $this->{{table.name}}->api->{{-plural into.table}}->one($this->_->{{name}});
+    }
+
+    function set({{-ref into.table}} $x) {
+        {{-ref into.table}}::valid($x);
+        $this->{{table.name}}->{{name}} = $x->id;
+        $this->api->{{-plural this.table}}->set($x);
+    }
+}
+
+{{/each}}
+
+class {{-pascal}} extends {{-model}} {
+    public $api = null;
+{{#each foreign}}
+    private {{-pascal (-name-)}}Subset ${{-name-}};
+{{/each}}
+
+    function __construct({{#-list nonkeys keys}}${{-param}}=null{{/-list}}, $api=null) {
+        parent::__construct({{#-list nonkeys keys}}${{-param}}{{/-list}});
+        $this->api = $api;
+{{#each foreign}}
+        $this->{{-name-}} = new {{-pascal (-name-)}}Subset($this);
+{{/each}}
+    }
+
+    function add($x) {
+        if ($x instanceof Engine) {
+            return $x->{{-plural}}->add($this);
+        }
+    }
+
+    function remove() {
+        $this->api->{{-plural}}->remove($this);
+        $this->id = null;
+    }
+
+    function push(?Fields $x=null) {
+        return $this->api->{{-plural}}->set(is_null($x) ? $this : $x);
+    }
+
+    function pull(?Fields $x=null) {
+        return $this->api->{{-plural}}->get($x);
+    }
+}
+
+
+class {{-pascal}}Manager extends {{-pascal}}Data {
+    private $api;
+    
+    function __construct(\quartz\Database $db, $api) {
+        parent::__construct($db);
+        $this->api = $api;
+    }
+{{#if _lookup}}
+
+    function fetch($x, ?int $id=null, ?bool $debug=false): {{-pascal}} {
+        $x_ = strval($x);
+        ${{alias}} = $this->one($x_);
+        if (is_null(${{alias}})) {
+            ${{alias}} = new {{-pascal}}(id:$id, {{_lookup.name}}:$x_, api:$this->api);
+            $this->add(${{alias}}, $debug);
+        }
+        return ${{alias}};
+    }
+{{/if}}
+
+    protected function create($x) {
+        return new {{-pascal}}({{#each columns}}{{-name}}:$x[{{@index}}], {{/each}}api:$this->api);
+    }
+}
+
+?>

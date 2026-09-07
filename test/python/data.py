@@ -77,7 +77,7 @@ class TestA(TestBase, unittest.TestCase):
 
     def testDataset(self):
         Log.test("\nTest Dataset")
-        ds = Dataset("examples/db/books.sql", "temp/books.db")
+        ds = Dataset("examples/db/sqlite.sql", "temp/books.db")
         ds.open(reset=True)
         self.checkAdd(ds)
         self.checkAddJoins(ds)

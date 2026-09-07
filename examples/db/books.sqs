@@ -25,7 +25,7 @@
         </SQLField>
         <SQLField>
             <name><![CDATA[name]]></name>
-            <type><![CDATA[TEXT]]></type>
+            <type><![CDATA[VARCHAR(255)]]></type>
             <notNull><![CDATA[1]]></notNull>
             <uid><![CDATA[9748EA26-0E32-4DA5-89F9-15B51C217F53]]></uid>
             <unique><![CDATA[1]]></unique>
@@ -125,7 +125,7 @@
         </SQLField>
         <SQLField>
             <name><![CDATA[title]]></name>
-            <type><![CDATA[TEXT]]></type>
+            <type><![CDATA[VARCHAR(255)]]></type>
             <notNull><![CDATA[1]]></notNull>
             <uid><![CDATA[FD791AAE-B5F5-4078-B6FB-4AEC43F70C85]]></uid>
             <unique><![CDATA[1]]></unique>
@@ -166,7 +166,7 @@
         </SQLField>
         <SQLField>
             <name><![CDATA[name]]></name>
-            <type><![CDATA[TEXT]]></type>
+            <type><![CDATA[VARCHAR(255)]]></type>
             <notNull><![CDATA[1]]></notNull>
             <uid><![CDATA[BAD0B7FC-9BF6-47A9-A30C-58F1E4F2F5FB]]></uid>
             <unique><![CDATA[1]]></unique>
@@ -264,7 +264,7 @@
         </SQLField>
         <SQLField>
             <name><![CDATA[name]]></name>
-            <type><![CDATA[TEXT]]></type>
+            <type><![CDATA[VARCHAR(255)]]></type>
             <notNull><![CDATA[1]]></notNull>
             <uid><![CDATA[FDF400BA-95E3-41C6-A37D-A18BDE89DFA5]]></uid>
             <unique><![CDATA[1]]></unique>
@@ -356,7 +356,7 @@
         <autoSizeTablesOption><![CDATA[0]]></autoSizeTablesOption>
         <documentScaleFactor><![CDATA[1]]></documentScaleFactor>
         <dropTableOption><![CDATA[1]]></dropTableOption>
-        <exportDialect><![CDATA[SQLite]]></exportDialect>
+        <exportDialect><![CDATA[mysql]]></exportDialect>
         <fileversion><![CDATA[4]]></fileversion>
         <generator><![CDATA[com.malcolmhardie.sqleditor]]></generator>
         <generatorVersion><![CDATA[4.0.3]]></generatorVersion>

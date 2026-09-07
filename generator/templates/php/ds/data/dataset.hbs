@@ -1,0 +1,38 @@
+<?php
+namespace {{_namespace}};
+require_once __DIR__ . '/common/base.php';
+{{#each subsets}}
+require_once __DIR__ . '/data/{{-name}}.php';
+{{/each}}
+
+
+class Dataset {
+    private $db = null;
+{{#each subsets}}
+    public ${{-plural}} = null;
+{{/each}}
+
+    function __construct(string $scheme, ?string $queries=null) {
+        # Database
+        $this->db = new quartz\Database($scheme, $queries);
+        # Entities
+{{#each subsets}}
+        $this->{{-plural}} = new {{-pascal}}Data($this->db);
+{{/each}}
+    }
+
+    function open(bool $reset=false) {
+        $this->db->open(getenv('DB_NAME'), getenv('DB_USER'), getenv('DB_PASS'), reset:$reset);
+    }
+
+    function isOpen(): bool {
+        return $this->db.isOpen();
+    }
+
+    function close() {
+        $this->db->close();
+    }
+}
+
+
+?>

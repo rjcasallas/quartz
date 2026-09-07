@@ -1,2 +1,2 @@
-INSERT INTO `book`(`id`, `publisher_id`, `title`, `year`)
+REPLACE INTO `book`(`id`, `publisher_id`, `title`, `year`)
 VALUES (?, ?, ?, ?)

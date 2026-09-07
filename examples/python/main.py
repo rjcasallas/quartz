@@ -1,8 +1,7 @@
-# Main entry point for the application.
-import sys
-import os
 from quartz.app import BasicApp, BasicCommand, Types
 from quartz.log import Log
+import sys
+import os
 
 
 class RedCommand(BasicCommand):

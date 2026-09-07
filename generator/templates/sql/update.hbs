@@ -1,3 +1,4 @@
 UPDATE `{{name}}`
    SET {{#-list _nonkeys}}`{{name}}`=?{{/-list}}
- WHERE {{#-list _keys}}`{{name}}`=?{{/-list}}
+ WHERE {{#each _keys}}{{#unless @first}}
+   AND {{/unless}}`{{name}}`=?{{/each}}
